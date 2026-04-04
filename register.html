@@ -152,6 +152,27 @@
 <script>
 const AIRTABLE_API_KEY = localStorage.getItem('linn_airtable_key') || '';
 const AIRTABLE_BASE_ID = localStorage.getItem('linn_airtable_base') || '';
+const SUPABASE_URL = 'https://uyktwvnllouhvovqpnrd.supabase.co';
+const SUPABASE_KEY = 'eyJhbJciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3R3dm5sbG91aHZvdnFwbnJkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTMwMDA3OCwiZXhwIjoyMDkwODc2MDc4fQ.hwQjlY84DxY-uMwXPTtACnoDvKlYMBPfDY6_tJjtR68';
+
+async function supabaseFetch(table, options = {}) {
+  const { method = 'GET', body, filters, select = '*' } = options;
+  let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
+  if (filters) {
+    Object.entries(filters).forEach(([k, v]) => { url += `&${k}=eq.${encodeURIComponent(v)}`; });
+  }
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    },
+    ...(body ? { body: JSON.stringify(body) } : {})
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
 
 async function hashPassword(password) {
   const encoder = new TextEncoder();
@@ -200,48 +221,35 @@ async function doSubmit() {
   if (!password || password.length < 6) { showError('密码至少6位'); return; }
 
   // Check if API is configured
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    showError('系统未配置Airtable，请联系管理员');
-    return;
-  }
-
-  // Check if email already registered
-  try {
-    const checkRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Assessors?filterByFormula=Email="${email}"`, {
-      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
-    });
-    const checkData = await checkRes.json();
-    if (checkData.records && checkData.records.length > 0) {
-      showError('该邮箱已被注册，请联系管理员或使用其他邮箱');
-      return;
-    }
-  } catch (e) {
-    showError('检查邮箱时出错，请重试');
-    return;
-  }
-
-  // Submit registration
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = '提交中...';
 
   try {
+    // Check if email already registered in Supabase
+    const existing = await supabaseFetch('assessors', { filters: { email } });
+    if (existing && existing.length > 0) {
+      showError('该邮箱已被注册，请联系管理员或使用其他邮箱');
+      btn.disabled = false;
+      btn.textContent = '提交申请';
+      return;
+    }
+
+    // Submit registration to Supabase
     const hash = await hashPassword(password);
-    const fields = {
-      Name: name,
-      Email: email,
-      Password: hash,
-      Status: '待激活',
-      Phone: phone,
-      CreatedAt: new Date().toISOString().split('T')[0]
-    };
-    const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Assessors`, {
+    await supabaseFetch('assessors', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields })
+      body: {
+        name,
+        email,
+        password: hash,
+        status: '待激活',
+        phone,
+        created_at: new Date().toISOString()
+      }
     });
-    if (res.ok) {
-      const msg = `【新评估师注册申请】
+
+    const msg = `【新评估师注册申请】
 
 姓名：${name}
 邮箱：${email}
@@ -252,12 +260,6 @@ async function doSubmit() {
       document.getElementById('shareText').textContent = msg;
       document.getElementById('registerCard').style.display = 'none';
       document.getElementById('successCard').style.display = 'block';
-    } else {
-      const err = await res.json();
-      showError('提交失败：' + (err.error?.message || '请重试'));
-      btn.disabled = false;
-      btn.textContent = '提交申请';
-    }
   } catch (e) {
     showError('提交失败：' + e.message);
     btn.disabled = false;

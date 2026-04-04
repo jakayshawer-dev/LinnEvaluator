@@ -278,6 +278,23 @@
 const API_KEY = localStorage.getItem('linn_airtable_key') || '';
 const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
 const ASSESSOR_NAME = localStorage.getItem('linn_assessor_name') || '演示评估师';
+const SUPABASE_URL = 'https://uyktwvnllouhvovqpnrd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3R3dm5sbG91aHZvdnFwbnJkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTMwMDA3OCwiZXhwIjoyMDkwODc2MDc4fQ.hwQjlY84DxY-uMwXPTtACnoDvKlYMBPfDY6_tJjtR68';
+
+async function supabaseFetch(table, options = {}) {
+  const { method = 'GET', body, filters, select = '*', order } = options;
+  let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
+  if (filters) { Object.entries(filters).forEach(([k,v]) => { url += `&${k}=eq.${encodeURIComponent(v)}`; }); }
+  if (order) url += `&order(${order.field})=${order.direction || 'asc'}`;
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+    ...(body ? { body: JSON.stringify(body) } : {})
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 let allClients = [];
 let currentFilter = 'all';
 
@@ -335,18 +352,21 @@ document.getElementById('confirmNewClient').addEventListener('click', async () =
     return;
   }
 
+  // Use Supabase
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients`, {
+    const newClient = await supabaseFetch('clients', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields })
+      body: {
+        name: fields.Name,
+        gender: fields.Gender,
+        age: fields.Age,
+        phone: fields.Phone,
+        assessor: fields.Assessor,
+        created_at: new Date().toISOString()
+      }
     });
-    if (res.ok) {
-      closeModal();
-      loadClients();
-    } else {
-      alert('创建失败，请检查Airtable配置');
-    }
+    closeModal();
+    loadClients();
   } catch (e) {
     alert('创建失败：' + e.message);
   }
@@ -366,26 +386,20 @@ async function loadClients() {
     return;
   }
   try {
-    const [clientsRes, assessmentsRes] = await Promise.all([
-      fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients?filterByFormula=Assessor="${ASSESSOR_NAME}"&sort[0][field]=Name&sort[0][direction]=asc`, {
-        headers: { Authorization: `Bearer ${API_KEY}` }
-      }),
-      fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments?filterByFormula=Assessor="${ASSESSOR_NAME}"`, {
-        headers: { Authorization: `Bearer ${API_KEY}` }
-      })
+    const [clients, assessments] = await Promise.all([
+      supabaseFetch('clients', { filters: { assessor: ASSESSOR_NAME }, order: { field: 'name', direction: 'asc' } }),
+      supabaseFetch('assessments', { filters: { assessor: ASSESSOR_NAME } })
     ]);
-    const clientsData = await clientsRes.json();
-    const assessmentsData = await assessmentsRes.json();
-    allClients = clientsData.records || [];
-    const assessments = assessmentsData.records || [];
+    allClients = clients.map(c => ({ id: c.id, fields: { Name: c.name, Gender: c.gender, Age: c.age, Phone: c.phone, Assessor: c.assessor, CreatedAt: c.created_at ? c.created_at.split('T')[0] : '' }, _assessments: assessments.filter(a => a.client_id === c.id) }));
 
     document.getElementById('totalClients').textContent = allClients.length;
     document.getElementById('totalAssessments').textContent = assessments.length;
-    document.getElementById('pendingCount').textContent = assessments.filter(a => a.fields.Status === '进行中').length;
-
-    // Attach assessment counts to clients
-    allClients.forEach(c => {
-      c._assessments = assessments.filter(a => a.fields.Client && a.fields.Client[0] === c.id);
+    document.getElementById('pendingCount').textContent = assessments.filter(a => a.status === '进行中').length;
+    renderClients();
+  } catch (e) {
+    console.error(e);
+  }
+}
     });
     renderClients();
   } catch (e) {

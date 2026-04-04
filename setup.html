@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>初始化配置 - LINN 面部歪斜评估系统</title>
+  <title>系统配置 - LINN 面部歪斜评估系统</title>
   <style>
     :root {
       --green-primary: #2E7D32;
@@ -19,201 +19,76 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
+      background: var(--bg); color: var(--text); min-height: 100vh;
     }
     .header {
       background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
-      color: white;
-      padding: 20px;
-      text-align: center;
+      color: white; padding: 20px; text-align: center;
     }
     .header h1 { font-size: 18px; font-weight: 700; }
     .container { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
     .card {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 24px 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      background: var(--card); border-radius: 14px; padding: 24px 20px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
-    .card h2 {
-      font-size: 16px;
-      margin-bottom: 16px;
-      color: var(--green-primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .form-group { margin-bottom: 14px; }
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--text);
-    }
-    .form-group input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-      background: #FAFAFA;
-    }
-    .form-group input:focus { border-color: var(--green-primary); background: white; }
-    .form-group .hint {
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 4px;
-    }
-    .btn {
-      width: 100%;
-      padding: 13px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--green-primary), var(--green-light));
-      color: white;
-    }
-    .btn-primary:hover { box-shadow: 0 4px 16px rgba(46,125,50,0.3); }
-    .btn-secondary {
-      background: white;
-      color: var(--green-primary);
-      border: 2px solid var(--green-primary);
-      margin-top: 10px;
-    }
+    .card h2 { font-size: 16px; margin-bottom: 14px; color: var(--green-primary); }
     .info-box {
-      background: #E8F5E9;
-      border-left: 4px solid var(--green-primary);
-      padding: 12px 14px;
-      border-radius: 0 8px 8px 0;
-      font-size: 13px;
-      line-height: 1.7;
-      margin-bottom: 16px;
+      background: #E8F5E9; border-left: 4px solid var(--green-primary);
+      padding: 12px 14px; border-radius: 0 8px 8px 0; font-size: 13px; line-height: 1.7; margin-bottom: 12px;
     }
     .info-box a { color: var(--purple-primary); text-decoration: none; }
-    .success-msg {
-      background: #E8F5E9;
-      color: var(--green-primary);
-      padding: 12px 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      margin-bottom: 16px;
-      display: none;
-      border-left: 4px solid var(--green-primary);
+    .supabase-note {
+      background: #FFF3E0; border-left: 4px solid #F57C00;
+      padding: 14px; border-radius: 0 8px 8px 0; font-size: 13px; line-height: 1.7; margin-bottom: 16px;
     }
+    .supabase-note strong { color: #E65100; }
     .field-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-    .field-table th, .field-table td {
-      border: 1px solid var(--border);
-      padding: 6px 8px;
-      text-align: left;
-    }
+    .field-table th, .field-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
     .field-table th { background: #F5F5F5; font-weight: 600; }
-    .field-table code { background: #EEE; padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .form-group input {
+      width: 100%; padding: 10px 14px; border: 2px solid var(--border); border-radius: 8px;
+      font-size: 14px; outline: none; background: #FAFAFA;
+    }
+    .form-group input:focus { border-color: var(--green-primary); background: white; }
+    .form-group .hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; margin-top: 10px; }
+    .btn-primary:hover { box-shadow: 0 4px 16px rgba(46,125,50,0.3); }
+    .btn-secondary { background: white; color: var(--green-primary); border: 2px solid var(--green-primary); margin-top: 8px; }
+    .success-msg {
+      background: #E8F5E9; color: var(--green-primary); padding: 12px 14px; border-radius: 8px;
+      font-size: 14px; margin-bottom: 16px; display: none; border-left: 4px solid var(--green-primary);
+    }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>⚙️ Airtable 配置向导</h1>
+  <h1>⚙️ 系统配置</h1>
 </div>
 
 <div class="container">
 
   <div class="card">
-    <h2>📌 第一步：创建 Airtable Base</h2>
+    <h2>📊 数据库状态</h2>
+    <div class="supabase-note">
+      ✅ <strong>已配置 Supabase</strong><br>
+      项目：林琳美学评估系统<br>
+      地址：supabase.com/project/uyktwvnllouhvovqpnrd<br>
+      <br>
+      数据库已创建完成，所有表已就绪。<br>
+      演示模式无需任何配置，可直接使用。
+    </div>
     <div class="info-box">
-      1. 登录 <a href="https://airtable.com" target="_blank">airtable.com</a><br>
-      2. 创建一个新的 Base，命名为"LINN 面部歪斜评估系统"<br>
-      3. 在 Base 中创建以下4张表（字段名必须完全一致）：
+      💡 <strong>提示：</strong>系统已连接 Supabase 免费数据库。<br>
+      演示模式使用本地存储，无需配置即可体验完整流程。<br>
+      正式使用时请确保 Supabase 连接正常。
     </div>
-    <table class="field-table">
-      <tr><th>表名</th><th>关键字段</th></tr>
-      <tr><td><strong>Assessors</strong></td><td>Name(文本), Email(文本), Password(文本), Status(单选), Phone(文本)</td></tr>
-      <tr><td><strong>Clients</strong></td><td>Name(文本), Gender(单选), Age(数字), Assessor(文本), Phone(电话)</td></tr>
-      <tr><td><strong>Assessments</strong></td><td>Client(关联), Assessor(文本), Status(单选), PseudoScore(数字), TrueScore(数字), ResultType(单选), CreatedAt(日期)</td></tr>
-      <tr><td><strong>Recommendations</strong></td><td>Type(单选), SubType(文本), Title(文本), Content(长文本), Priority(数字)</td></tr>
-    </table>
-    <div class="info-box" style="margin-top:12px;background:#FFF3E0;border-color:#F57C00;">
-      <strong>⚠️ Assessors 表 Status 字段说明：</strong><br>
-      评估师注册后 Status 默认为"待激活"，管理员手动改为"已激活"后方可登录。<br>
-      Status 选项：<strong>待激活 / 已激活</strong>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>🔑 第二步：填写配置信息</h2>
-    <div class="success-msg" id="successMsg">✅ 配置已保存！可以开始使用了。</div>
-    <div class="form-group">
-      <label>Airtable Personal Access Token</label>
-      <input type="text" id="apiKey" placeholder="pat...">
-      <div class="hint">在 airtable.com/create/tokens 创建，勾选 data.records:read 和 data.records:write 权限</div>
-    </div>
-    <div class="form-group">
-      <label>Base ID</label>
-      <input type="text" id="baseId" placeholder="appXXXXXXXXXXXXXX">
-      <div class="hint">Base URL 中的 app 后面那一段，如 appXXXXXXXXXXXXXX</div>
-    </div>
-    <button class="btn btn-primary" id="saveBtn">保存配置</button>
-    <button class="btn btn-secondary" id="testBtn">测试连接</button>
-  </div>
-
-  <div class="card">
-    <h2>📋 第三步：验证与开始</h2>
-    <div class="info-box">
-      配置保存后，返回登录页即可使用系统。<br>
-      演示模式无需注册，可直接体验完整流程。
-    </div>
-    <button class="btn btn-primary" onclick="window.location.href='index.html'">返回登录页</button>
+    <button class="btn btn-primary" onclick="window.location.href='index.html'">返回登录页 →</button>
   </div>
 
 </div>
 
-<script>
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  const baseId = document.getElementById('baseId').value.trim();
-  if (!apiKey || !baseId) {
-    alert('请填写完整信息');
-    return;
-  }
-  localStorage.setItem('linn_airtable_key', apiKey);
-  localStorage.setItem('linn_airtable_base', baseId);
-  document.getElementById('successMsg').style.display = 'block';
-});
-
-document.getElementById('testBtn').addEventListener('click', async () => {
-  const apiKey = document.getElementById('apiKey').value.trim() || localStorage.getItem('linn_airtable_key');
-  const baseId = document.getElementById('baseId').value.trim() || localStorage.getItem('linn_airtable_base');
-  if (!apiKey || !baseId) {
-    alert('请先填写配置信息');
-    return;
-  }
-  try {
-    const res = await fetch(`https://api.airtable.com/v0/${baseId}/Assessors?maxRecords=1`, {
-      headers: { Authorization: `Bearer ${apiKey}` }
-    });
-    if (res.ok) {
-      alert('✅ 连接成功！Airtable 配置正确。');
-    } else {
-      alert('❌ 连接失败：请检查 API Key 和 Base ID');
-    }
-  } catch (e) {
-    alert('❌ 连接失败：' + e.message);
-  }
-});
-
-// Load existing values
-document.getElementById('apiKey').value = localStorage.getItem('linn_airtable_key') || '';
-document.getElementById('baseId').value = localStorage.getItem('linn_airtable_base') || '';
-</script>
 </body>
 </html>

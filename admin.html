@@ -109,10 +109,23 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API_KEY = localStorage.getItem('linn_airtable_key') || '';
-const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
+const SUPABASE_URL = 'https://uyktwvnllouhvovqpnrd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3R3dm5sbG91aHZvdnFwbnJkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTMwMDA3OCwiZXhwIjoyMDkwODc2MDc4fQ.hwQjlY84DxY-uMwXPTtACnoDvKlYMBPfDY6_tJjtR68';
+
 let allRecords = [];
 let currentFilter = 'all';
+
+async function supabaseFetch(table, options = {}) {
+  const { method = 'GET', body, filters, select = '*', order } = options;
+  let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
+  if (filters) { Object.entries(filters).forEach(([k,v]) => { url += `&${k}=eq.${encodeURIComponent(v)}`; }); }
+  if (order) url += `&order(${order.field})=${order.direction || 'asc'}`;
+  const res = await fetch(url, {
+    method, headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, ...(body ? { body: JSON.stringify(body) } : {})
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -123,30 +136,18 @@ function toast(msg) {
 
 function setFilter(f) {
   currentFilter = f;
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.filter === f);
-  });
+  document.querySelectorAll('.tab').forEach(t => { t.classList.toggle('active', t.dataset.filter === f); });
   render();
 }
 
 async function loadData() {
-  if (!API_KEY || !BASE_ID) {
-    document.getElementById('listContainer').innerHTML = `
-      <div class="empty"><div class="icon">⚙️</div>请先在系统配置 Airtable</div>`;
-    return;
-  }
   document.getElementById('listContainer').innerHTML = '<div class="loading">加载中...</div>';
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors?sort[0][field]=CreatedAt&sort[0][direction]=desc`, {
-      headers: { Authorization: `Bearer ${API_KEY}` }
-    });
-    const data = await res.json();
-    if (!data.records) { document.getElementById('listContainer').innerHTML = '<div class="empty"><div class="icon">❌</div>加载失败</div>'; return; }
-    allRecords = data.records;
-    // Stats
+    const data = await supabaseFetch('assessors', { order: { field: 'created_at', direction: 'desc' } });
+    allRecords = data || [];
     document.getElementById('totalCount').textContent = allRecords.length;
-    document.getElementById('pendingCount').textContent = allRecords.filter(r => r.fields.Status === '待激活').length;
-    document.getElementById('activeCount').textContent = allRecords.filter(r => r.fields.Status === '已激活').length;
+    document.getElementById('pendingCount').textContent = allRecords.filter(r => r.status === '待激活').length;
+    document.getElementById('activeCount').textContent = allRecords.filter(r => r.status === '已激活').length;
     render();
   } catch (e) {
     document.getElementById('listContainer').innerHTML = '<div class="empty"><div class="icon">❌</div>' + e.message + '</div>';
@@ -154,26 +155,22 @@ async function loadData() {
 }
 
 function render() {
-  const filtered = currentFilter === 'all' ? allRecords : allRecords.filter(r => r.fields.Status === currentFilter);
+  const filtered = currentFilter === 'all' ? allRecords : allRecords.filter(r => r.status === currentFilter);
   const c = document.getElementById('listContainer');
-  if (filtered.length === 0) {
-    c.innerHTML = `<div class="empty"><div class="icon">📋</div>暂无账号记录</div>`;
-    return;
-  }
+  if (filtered.length === 0) { c.innerHTML = `<div class="empty"><div class="icon">📋</div>暂无账号记录</div>`; return; }
   c.innerHTML = filtered.map(r => {
-    const f = r.fields;
-    const status = f.Status || '待激活';
+    const status = r.status || '待激活';
     const isPending = status === '待激活';
     return `
     <div class="assessor-card ${status}">
       <div class="card-header">
-        <div class="card-name">${f.Name || '未填写姓名'}</div>
+        <div class="card-name">${r.name || '未填写姓名'}</div>
         <span class="badge badge-${status}">${status}</span>
       </div>
-      <div class="card-email">📧 ${f.Email || '—'}</div>
+      <div class="card-email">📧 ${r.email || '—'}</div>
       <div class="card-meta">
-        ${f.Phone ? `<span>📱 ${f.Phone}</span>` : ''}
-        <span>📅 ${f.CreatedAt || '—'}</span>
+        ${r.phone ? `<span>📱 ${r.phone}</span>` : ''}
+        <span>📅 ${r.created_at ? r.created_at.split('T')[0] : '—'}</span>
       </div>
       <div class="card-actions">
         ${isPending
@@ -189,49 +186,26 @@ function render() {
 
 async function activate(id) {
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors/${id}`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { Status: '已激活' } })
-    });
-    if (res.ok) {
-      toast('✅ 账号已开通！');
-      loadData();
-    } else {
-      toast('❌ 操作失败');
-    }
+    await supabaseFetch('assessors', { method: 'PATCH', body: { status: '已激活' }, filters: { id } });
+    toast('✅ 账号已开通！');
+    loadData();
   } catch (e) { toast('❌ ' + e.message); }
 }
 
 async function deactivate(id) {
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors/${id}`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { Status: '待激活' } })
-    });
-    if (res.ok) {
-      toast('⏸️ 账号已停用');
-      loadData();
-    } else {
-      toast('❌ 操作失败');
-    }
+    await supabaseFetch('assessors', { method: 'PATCH', body: { status: '待激活' }, filters: { id } });
+    toast('⏸️ 账号已停用');
+    loadData();
   } catch (e) { toast('❌ ' + e.message); }
 }
 
 async function removeRecord(id) {
   if (!confirm('确定删除该账号记录？')) return;
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${API_KEY}` }
-    });
-    if (res.ok) {
-      toast('🗑️ 已删除');
-      loadData();
-    } else {
-      toast('❌ 删除失败');
-    }
+    await supabaseFetch('assessors', { method: 'DELETE', filters: { id } });
+    toast('🗑️ 已删除');
+    loadData();
   } catch (e) { toast('❌ ' + e.message); }
 }
 
