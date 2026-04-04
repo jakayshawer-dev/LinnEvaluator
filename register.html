@@ -66,6 +66,11 @@
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .btn-ghost {
       background: transparent; color: var(--green-primary);
+      border: 2px solid var(--green-primary);
+    }
+    .btn-ghost:hover { background: var(--green-bg); }
+    .btn-ghost {
+      background: transparent; color: var(--green-primary);
       border: 2px solid var(--green-primary); margin-top: 10px;
     }
     .note {
@@ -130,10 +135,11 @@
   <div class="success-card" id="successCard">
     <div class="icon">✅</div>
     <h2>申请已提交！</h2>
-    <p>你的账号申请已发送，请联系管理员开通账号。</p>
-    <p style="margin-top:10px;"><strong>WeChat: LinnChang2017</strong></p>
-    <p style="margin-top:14px;">账号开通后，使用邮箱和密码登录即可。</p>
-    <button class="btn btn-primary" onclick="window.location.href='index.html'" style="margin-top:20px;">返回登录页</button>
+    <p>请复制下方信息，发给管理员开通账号：</p>
+    <div id="shareText" style="background:#FFF;border:2px dashed #CCC;border-radius:8px;padding:12px;font-size:13px;margin:14px 0;white-space:pre-wrap;line-height:1.7;user-select:all;"></div>
+    <button class="btn btn-primary" id="copyBtn" onclick="copyAndShare()">📋 复制注册信息</button>
+    <p style="font-size:12px;color:#757575;margin-top:8px;">复制后打开微信，粘贴发送给 <strong>LinnChang2017</strong></p>
+    <button class="btn btn-ghost" onclick="window.location.href='index.html'" style="margin-top:10px;">返回登录页</button>
   </div>
 
   <div class="contact-note">
@@ -158,6 +164,29 @@ function showError(msg) {
   const el = document.getElementById('errorMsg');
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+function copyAndShare() {
+  const text = document.getElementById('shareText').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 已复制到剪贴板！';
+      btn.style.background = 'var(--green-primary)';
+      setTimeout(() => {
+        btn.textContent = '📋 复制注册信息';
+        btn.style.background = '';
+      }, 2500);
+    });
+  } else {
+    // Fallback: select text
+    const el = document.getElementById('shareText');
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
 }
 
 async function doSubmit() {
@@ -212,6 +241,15 @@ async function doSubmit() {
       body: JSON.stringify({ fields })
     });
     if (res.ok) {
+      const msg = `【新评估师注册申请】
+
+姓名：${name}
+邮箱：${email}
+手机/微信：${phone || '未填写'}
+申请时间：${new Date().toLocaleString('zh-CN')}
+
+请登录后台开通账号。`;
+      document.getElementById('shareText').textContent = msg;
       document.getElementById('registerCard').style.display = 'none';
       document.getElementById('successCard').style.display = 'block';
     } else {
