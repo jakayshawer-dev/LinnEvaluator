@@ -188,7 +188,6 @@ async function loadClient() {
     return;
   }
   try {
-    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${clientId}`, {
       headers: { Authorization: `Bearer ${API_KEY}` }
     });
     const data = await res.json();
@@ -252,13 +251,11 @@ async function saveData(silent = false) {
       CreatedAt: assessment.createdAt.split('T')[0]
     };
     if (assessment.airtableId) {
-      await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments/${assessment.airtableId}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields })
       });
     } else {
-      const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields })
