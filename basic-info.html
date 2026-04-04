@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>基础信息 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --info: #1976D2; --border: #E0E0E0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    .progress-bar {
+      background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
+      color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .progress-bar .step { font-size: 13px; opacity: 0.8; }
+    .progress-bar .title { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+    .progress-dots { display: flex; gap: 6px; align-items: center; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4);
+    }
+    .dot.active { background: white; width: 20px; border-radius: 4px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }
+    .section-title {
+      font-size: 15px; font-weight: 700; color: var(--green-primary);
+      margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--green-bg);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .info-card {
+      background: var(--card); border-radius: 12px; padding: 16px;
+      margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .client-name-display {
+      font-size: 20px; font-weight: 700; color: var(--green-primary); margin-bottom: 4px;
+    }
+    .client-meta-display { font-size: 12px; color: var(--text-secondary); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: 8px;
+      font-size: 14px; outline: none; background: #FAFAFA; font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--green-primary); background: white;
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .radio-option {
+      flex: 1; min-width: 70px; padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px;
+      text-align: center; font-size: 13px; cursor: pointer; transition: all 0.2s;
+    }
+    .radio-option.selected { border-color: var(--green-primary); background: var(--green-bg); color: var(--green-primary); font-weight: 700; }
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      padding: 12px 16px; display: flex; gap: 10px; box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      max-width: 600px; margin: 0 auto; z-index: 100;
+    }
+    .btn { flex: 1; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-prev { background: #EEE; color: var(--text-secondary); }
+    .btn-next { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; }
+    .btn-save { background: var(--purple-primary); color: white; }
+    .auto-save-badge {
+      position: fixed; top: 70px; right: 16px; background: var(--green-bg); color: var(--green-primary);
+      padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s; z-index: 99;
+    }
+    .auto-save-badge.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar">
+  <div class="step">步骤 1/5</div>
+  <div class="progress-dots">
+    <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="title">基础信息</div>
+</div>
+
+<div class="auto-save-badge" id="saveBadge">✓ 已自动保存</div>
+
+<div class="container">
+  <div class="info-card" style="border-left: 4px solid var(--green-primary);">
+    <div class="client-name-display" id="clientName">加载中...</div>
+    <div class="client-meta-display" id="clientMeta"></div>
+  </div>
+
+  <div class="section-title">📋 评估信息</div>
+  <div class="info-card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>评估师</label>
+        <input type="text" id="assessorName" readonly style="background:#EEE;">
+      </div>
+      <div class="form-group">
+        <label>评估日期</label>
+        <input type="date" id="assessmentDate">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">👤 客户基础信息</div>
+  <div class="info-card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>姓名</label>
+        <input type="text" id="clientNameInput" placeholder="客户姓名">
+      </div>
+      <div class="form-group">
+        <label>性别</label>
+        <select id="clientGender">
+          <option value="">请选择</option>
+          <option value="男">男</option>
+          <option value="女">女</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>年龄</label>
+        <input type="number" id="clientAge" placeholder="年龄" min="1" max="120">
+      </div>
+      <div class="form-group">
+        <label>职业（选填）</label>
+        <input type="text" id="clientJob" placeholder="职业">
+      </div>
+      <div class="form-group full">
+        <label>主诉 / 来访目的</label>
+        <textarea id="clientComplaint" placeholder="请描述客户的主要诉求或困扰..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">📝 备注</div>
+  <div class="info-card">
+    <div class="form-group full">
+      <textarea id="remark" placeholder="其他备注信息（选填）..." style="min-height:100px;"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn btn-prev" onclick="window.location.href='clients.html'">← 返回客户</button>
+  <button class="btn btn-save" onclick="saveData()">💾 保存</button>
+  <button class="btn btn-next" onclick="goNext()">下一步 →</button>
+</div>
+
+<script>
+const API_KEY = localStorage.getItem('linn_airtable_key') || '';
+const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
+const ASSESSOR_NAME = localStorage.getItem('linn_assessor_name') || '演示评估师';
+
+const urlParams = new URLSearchParams(window.location.search);
+const clientId = urlParams.get('client') || '';
+
+// Auto-save
+let saveTimeout;
+function triggerAutoSave() {
+  clearTimeout(saveTimeout);
+  document.getElementById('saveBadge').classList.remove('show');
+  saveTimeout = setTimeout(() => {
+    saveData(true);
+    document.getElementById('saveBadge').classList.add('show');
+    setTimeout(() => document.getElementById('saveBadge').classList.remove('show'), 2000);
+  }, 1500);
+}
+
+const inputs = document.querySelectorAll('input, select, textarea');
+inputs.forEach(el => el.addEventListener('input', triggerAutoSave));
+
+// Init
+document.getElementById('assessorName').value = ASSESSOR_NAME;
+document.getElementById('assessmentDate').value = new Date().toISOString().split('T')[0];
+
+// Load client data
+async function loadClient() {
+  if (!clientId || clientId.startsWith('demo') || clientId === 'new') {
+    document.getElementById('clientName').textContent = '演示客户';
+    document.getElementById('clientMeta').textContent = '演示模式 · 无需Airtable连接';
+    document.getElementById('clientNameInput').value = '演示客户';
+    return;
+  }
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${clientId}`, {
+      headers: { Authorization: `Bearer ${API_KEY}` }
+    });
+    const data = await res.json();
+    const f = data.fields;
+    document.getElementById('clientName').textContent = f.Name;
+    document.getElementById('clientMeta').textContent = `${f.Gender || ''} ${f.Age ? f.Age + '岁' : ''} · ${f.Assessor || ''}`;
+    document.getElementById('clientNameInput').value = f.Name || '';
+    document.getElementById('clientGender').value = f.Gender || '';
+    document.getElementById('clientAge').value = f.Age || '';
+  } catch (e) { console.error(e); }
+}
+
+// Load existing assessment data
+function loadAssessmentData() {
+  const saved = localStorage.getItem('linn_current_assessment');
+  if (saved) {
+    const data = JSON.parse(saved);
+    if (data.basicInfo) {
+      Object.keys(data.basicInfo).forEach(k => {
+        const el = document.getElementById(k);
+        if (el) el.value = data.basicInfo[k];
+      });
+    }
+  }
+}
+loadClient();
+loadAssessmentData();
+
+async function saveData(silent = false) {
+  const basicInfo = {
+    assessorName: document.getElementById('assessorName').value,
+    assessmentDate: document.getElementById('assessmentDate').value,
+    clientName: document.getElementById('clientNameInput').value,
+    clientGender: document.getElementById('clientGender').value,
+    clientAge: document.getElementById('clientAge').value,
+    clientJob: document.getElementById('clientJob').value,
+    clientComplaint: document.getElementById('clientComplaint').value,
+    remark: document.getElementById('remark').value
+  };
+
+  let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  assessment.clientId = clientId;
+  assessment.basicInfo = basicInfo;
+  assessment.updatedAt = new Date().toISOString();
+
+  if (!assessment.id) {
+    assessment.id = 'assess_' + Date.now();
+    assessment.createdAt = new Date().toISOString();
+    assessment.status = '进行中';
+  }
+
+  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+
+  // Save to Airtable if configured
+  if (API_KEY && BASE_ID && !clientId.startsWith('demo')) {
+    const fields = {
+      Assessor: ASSESSOR_NAME,
+      Client: [clientId],
+      Status: '进行中',
+      BasicInfo: JSON.stringify(basicInfo),
+      CreatedAt: assessment.createdAt.split('T')[0]
+    };
+    if (assessment.airtableId) {
+      await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments/${assessment.airtableId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields })
+      });
+    } else {
+      const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields })
+      });
+      const data = await res.json();
+      if (data.id) {
+        assessment.airtableId = data.id;
+        localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+      }
+    }
+  }
+
+  if (!silent) {
+    alert('✅ 基础信息已保存');
+  }
+}
+
+function goNext() {
+  saveData(true);
+  window.location.href = 'overview.html' + (clientId ? '?client=' + clientId : '');
+}
+</script>
+</body>
+</html>

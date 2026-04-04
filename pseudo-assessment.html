@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>假性评估 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --info: #1976D2; --border: #E0E0E0; --warning: #F57C00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    .progress-bar {
+      background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
+      color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .progress-bar .step { font-size: 13px; opacity: 0.8; }
+    .progress-bar .title { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+    .progress-dots { display: flex; gap: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+    .dot.active { background: white; width: 20px; border-radius: 4px; }
+    .dot.done { background: #A5D6A7; }
+    .sub-progress { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 2px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }
+    .info-banner {
+      background: linear-gradient(135deg, #E8F5E9, #F3E5F5);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+      font-size: 13px; line-height: 1.7; border-left: 4px solid var(--green-primary);
+    }
+    .section-title {
+      font-size: 15px; font-weight: 700; color: var(--green-primary);
+      margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--green-bg);
+    }
+    .category-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px;
+      font-weight: 700; margin-bottom: 10px;
+    }
+    .badge-posture { background: #E3F2FD; color: var(--info); }
+    .badge-eye { background: #F3E5F5; color: var(--purple-primary); }
+    .item-card {
+      background: var(--card); border-radius: 12px; padding: 16px;
+      margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-top: 3px solid var(--green-primary);
+    }
+    .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .item-name { font-size: 16px; font-weight: 700; }
+    .item-score-badge {
+      padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;
+      background: var(--green-bg); color: var(--green-primary);
+      line-height: 1.4;
+    }
+    .item-score-badge.zero { background: #EEE; color: var(--text-secondary); }
+    .item-score-badge.high { background: #FFEBEE; color: var(--danger); }
+    .item-score-badge.consistent { background: var(--green-bg); color: var(--green-primary); }
+    .item-score-badge.inconsistent { background: #FFF3E0; color: var(--warning); }
+    .item-score-badge.warning { background: #FFF3E0; color: var(--warning); }
+    .field-label {
+      font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; margin-top: 10px;
+    }
+    .option-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .opt-btn {
+      flex: 1; min-width: 65px; padding: 8px 6px; border: 2px solid var(--border); border-radius: 8px;
+      text-align: center; font-size: 12px; cursor: pointer; transition: all 0.2s;
+      background: white; color: var(--text-secondary); font-weight: 600;
+    }
+    .opt-btn:hover { border-color: var(--green-primary); }
+    .opt-btn.selected { border-color: var(--green-primary); background: var(--green-bg); color: var(--green-primary); font-weight: 700; }
+    .opt-btn.selected-no { border-color: var(--danger); background: #FFEBEE; color: var(--danger); font-weight: 700; }
+    .opt-btn.selected-yes { border-color: var(--info); background: #E3F2FD; color: var(--info); font-weight: 700; }
+    .severity-row { display: flex; gap: 6px; }
+    .sev-btn {
+      flex: 1; padding: 8px; border: 2px solid var(--border); border-radius: 8px;
+      text-align: center; font-size: 12px; cursor: pointer; background: white;
+      color: var(--text-secondary); transition: all 0.2s; font-weight: 600;
+    }
+    .sev-btn:hover { border-color: var(--warning); }
+    .sev-btn.selected { border-color: var(--warning); background: #FFF3E0; color: var(--warning); font-weight: 700; }
+    .remark-input {
+      width: 100%; padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px;
+      font-size: 13px; outline: none; background: #FAFAFA; margin-top: 8px;
+      font-family: inherit;
+    }
+    .remark-input:focus { border-color: var(--green-primary); background: white; }
+    .score-summary {
+      background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+      color: white; border-radius: 14px; padding: 18px 20px; margin: 20px 0;
+      display: flex; justify-content: space-around; text-align: center;
+    }
+    .score-summary .big-num { font-size: 32px; font-weight: 800; }
+    .score-summary .label { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+    .auto-save-badge {
+      position: fixed; top: 70px; right: 16px; background: var(--green-bg); color: var(--green-primary);
+      padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s; z-index: 99;
+    }
+    .auto-save-badge.show { opacity: 1; }
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      padding: 12px 16px; display: flex; gap: 10px; box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      max-width: 600px; margin: 0 auto; z-index: 100;
+    }
+    .btn { flex: 1; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-prev { background: #EEE; color: var(--text-secondary); }
+    .btn-next { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; }
+    .btn-save { background: var(--purple-primary); color: white; }
+    .btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar">
+  <div class="step">步骤 4/5</div>
+  <div class="progress-dots">
+    <div class="dot done">✓</div><div class="dot done">✓</div><div class="dot done">✓</div><div class="dot active"></div><div class="dot"></div>
+  </div>
+  <div class="title">假性评估</div>
+</div>
+<div class="sub-progress" id="subProgress">第 1 部分（共2部分）</div>
+
+<div class="auto-save-badge" id="saveBadge">✓ 已自动保存</div>
+
+<div class="container">
+
+  <div class="info-banner">
+    💡 <strong>评分规则：</strong>C=否→0分 | C=是，D=否→E×0.5 | C=是，D=是→1+E<br>
+    <span style="font-size:12px;color:var(--text-secondary)">D=该体态偏斜方向是否与面部主偏斜方向一致</span>
+  </div>
+
+  <!-- Part 1: Posture items 1-5 -->
+  <div id="part1"></div>
+  <!-- Part 2: Eye/Mouth items 6-10 -->
+  <div id="part2" style="display:none;"></div>
+
+  <!-- Score Summary -->
+  <div class="score-summary">
+    <div>
+      <div class="big-num" id="pseudoTotalScore">0</div>
+      <div class="label">假性总分</div>
+    </div>
+    <div>
+      <div class="big-num" id="itemCount">0</div>
+      <div class="label">异常项</div>
+    </div>
+    <div>
+      <div class="big-num" id="mainFactors">—</div>
+      <div class="label">主要因素</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-bar">
+  <button class="btn btn-prev" id="prevBtn" onclick="prevPart()">← 上一步</button>
+  <button class="btn btn-save" onclick="saveData(true)">💾 保存</button>
+  <button class="btn btn-next" id="nextBtn" onclick="nextPart()">第2部分 →</button>
+</div>
+
+<script>
+// 10 pseudo assessment items
+const ITEMS = [
+  // Part 1: Posture (6 items)
+  { id: 'pelvis_tilt', name: '骨盆侧倾', category: 'posture', desc: '骨盆在水平面内发生的偏斜，影响脊柱、下肢、肩膀位置' },
+  { id: 'pelvis_anteversion', name: '骨盆前倾', category: 'posture', desc: '骨盆前倾导致腰椎前屈，影响上半身姿势' },
+  { id: 'thoracic_scoliosis', name: '胸椎侧弯', category: 'posture', desc: '胸椎侧弯对上半身和面部的影响较大' },
+  { id: 'chest_collapse', name: '胸腔塌陷', category: 'posture', desc: '胸部前后方向的塌陷，影响胸腔支撑和整体体态' },
+  { id: 'neck_curvature', name: '颈部侧弯', category: 'posture', desc: '颈部侧弯影响颈椎的正常位置' },
+  { id: 'neck_rotation', name: '颈部旋转', category: 'posture', desc: '颈部旋转问题会导致颈部和面部的失衡' },
+  // Part 2: Eye/Mouth (4 items)
+  { id: 'ocular_neck_reflex', name: '眶-颈反射', category: 'eye', desc: '眼睛运动和状态直接影响到颈部肌肉的反应' },
+  { id: 'chewing_lateral', name: '咀嚼偏侧', category: 'eye', desc: '长期单侧咀嚼的习惯，造成面部肌肉的紧张或不对称' },
+  { id: 'tmj_wisdom', name: '智齿 / TMJ', category: 'eye', desc: '智齿生长问题或颞颌关节问题导致咀嚼不对称' },
+  { id: 'cervical_proprioception', name: '颈椎本体感损伤', category: 'eye', desc: '颈部的神经和肌肉协调问题，导致位置感知异常' }
+];
+
+const PART1 = ITEMS.slice(0, 6);
+const PART2 = ITEMS.slice(6);
+const FACE_DIRECTION_OPTIONS = [
+  { label: '偏左', value: 'left' },
+  { label: '偏右', value: 'right' },
+  { label: '无/不适用', value: 'none' }
+];
+const SEVERITY_OPTIONS = [
+  { label: '轻微（0分）', value: 0 },
+  { label: '中度（1分）', value: 1 },
+  { label: '明显（2分）', value: 2 }
+];
+
+let currentPart = 1;
+let saveTimeout;
+let pseudoData = {};
+
+function triggerAutoSave() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveData(true);
+    showSaveBadge();
+  }, 1500);
+}
+
+function showSaveBadge() {
+  const el = document.getElementById('saveBadge');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function getScoreInfo(itemId) {
+  const d = pseudoData[itemId] || {};
+  if (!d.C) return { score: 0, formula: '', status: 'none' };
+  if (d.C === 'no') return { score: 0, formula: 'C=否 → 0分', status: 'zero' };
+  if (d.C === 'yes') {
+    const assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+    const faceDir = assessment.faceMainDirection || 'unclear';
+    const e = d.E || 0;
+
+    // 无/不适用：该项有异常但无明确方向，无法与面部比较，按E×0.5处理
+    if (d.D === 'none') {
+      const score = e * 0.5;
+      return { score, formula: `D=无方向 → ${e}×0.5=${score}`, status: 'warning', faceDir };
+    }
+
+    // 面部方向未确定时：无法判断一致，得分按E×0.5
+    if (faceDir === 'unclear') {
+      const score = e * 0.5;
+      return { score, formula: `⚠️面部方向未确定 → ${e}×0.5=${score}`, status: 'warning', faceDir };
+    }
+
+    // 一致：与面部主偏斜方向相同
+    if (d.D === faceDir) {
+      const score = 1 + e;
+      return { score, formula: `✓与面部${faceDir==='left'?'偏左':'偏右'}一致 → 1+${e}=${score}`, status: 'consistent', faceDir };
+    }
+
+    // 不一致
+    const score = e * 0.5;
+    return { score, formula: `✗与面部${faceDir==='left'?'偏左':'偏右'}不一致 → ${e}×0.5=${score}`, status: 'inconsistent', faceDir };
+  }
+  return { score: 0, formula: '', status: 'none' };
+}
+
+function calcScore(itemId) {
+  return getScoreInfo(itemId).score;
+}
+
+function renderPart(partItems, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = partItems.map(item => `
+    <div class="item-card" id="card_${item.id}">
+      <div class="item-header">
+        <div class="item-name">${item.name}</div>
+        <div class="item-score-badge"
+             id="score_badge_${item.id}">得分: —</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${item.desc}</div>
+
+      <div class="field-label">C. 是否存在异常？</div>
+      <div class="option-row">
+        <div class="opt-btn" id="${item.id}_C_yes" onclick="setC('${item.id}','yes')">是</div>
+        <div class="opt-btn" id="${item.id}_C_no" onclick="setC('${item.id}','no')">否</div>
+      </div>
+
+      <div class="field-label" style="margin-top:12px;">D. 该体态向哪侧偏斜？</div>
+      <div class="option-row">
+        <div class="opt-btn" id="${item.id}_D_left" onclick="setD('${item.id}','left')">偏左</div>
+        <div class="opt-btn" id="${item.id}_D_right" onclick="setD('${item.id}','right')">偏右</div>
+        <div class="opt-btn" id="${item.id}_D_none" onclick="setD('${item.id}','none')">无/不适用</div>
+      </div>
+
+      <div class="field-label" style="margin-top:12px;">E. 严重度</div>
+      <div class="severity-row">
+        ${SEVERITY_OPTIONS.map(opt => `
+          <div class="sev-btn" id="${item.id}_E_${opt.value}"
+               onclick="setE('${item.id}',${opt.value})">${opt.label}</div>
+        `).join('')}
+      </div>
+
+      <input type="text" class="remark-input" id="${item.id}_remark"
+             placeholder="备注（选填）..."
+             value="${pseudoData[item.id]?.remark || ''}"
+             oninput="setRemark('${item.id}', this.value)">
+    </div>
+  `).join('');
+
+  // Apply selections
+  partItems.forEach(item => {
+    const d = pseudoData[item.id] || {};
+    if (d.C) {
+      document.getElementById(`${item.id}_C_${d.C}`).classList.add(d.C === 'yes' ? 'selected-yes' : 'selected-no');
+    }
+    if (d.D) {
+      const btn = document.getElementById(`${item.id}_D_${d.D}`);
+      btn.classList.add('selected-' + (d.D === 'left' ? 'left' : d.D === 'right' ? 'right' : 'none'));
+    }
+    if (d.E !== undefined) {
+      document.getElementById(`${item.id}_E_${d.E}`).classList.add('selected');
+    }
+    updateScore(item.id);
+  });
+}
+
+function setC(itemId, val) {
+  if (!pseudoData[itemId]) pseudoData[itemId] = {};
+  pseudoData[itemId].C = val;
+  document.querySelectorAll(`[id^="${itemId}_C_"]`).forEach(b => {
+    b.classList.remove('selected-yes', 'selected-no');
+  });
+  document.getElementById(`${itemId}_C_${val}`).classList.add(val === 'yes' ? 'selected-yes' : 'selected-no');
+  updateScore(itemId);
+  triggerAutoSave();
+}
+
+function setD(itemId, val) {
+  if (!pseudoData[itemId]) pseudoData[itemId] = {};
+  pseudoData[itemId].D = val;
+  document.querySelectorAll(`[id^="${itemId}_D_"]`).forEach(b => {
+    b.classList.remove('selected-left', 'selected-right', 'selected-none');
+  });
+  document.getElementById(`${itemId}_D_${val}`).classList.add('selected-' + (val === 'left' ? 'left' : val === 'right' ? 'right' : 'none'));
+  updateScore(itemId);
+  triggerAutoSave();
+}
+
+
+function setE(itemId, val) {
+  if (!pseudoData[itemId]) pseudoData[itemId] = {};
+  pseudoData[itemId].E = val;
+  document.querySelectorAll(`[id^="${itemId}_E_"]`).forEach(b => b.classList.remove('selected'));
+  document.getElementById(`${itemId}_E_${val}`).classList.add('selected');
+  updateScore(itemId);
+  triggerAutoSave();
+}
+
+function setRemark(itemId, val) {
+  if (!pseudoData[itemId]) pseudoData[itemId] = {};
+  pseudoData[itemId].remark = val;
+  triggerAutoSave();
+}
+
+function updateScore(itemId) {
+  const info = getScoreInfo(itemId);
+  const badge = document.getElementById(`score_badge_${itemId}`);
+  if (info.status === 'none') {
+    badge.textContent = '得分: —';
+    badge.className = 'item-score-badge';
+  } else if (info.status === 'zero') {
+    badge.textContent = `得分: 0\nC=否 → 0分`;
+    badge.className = 'item-score-badge zero';
+  } else {
+    const cls = info.status === 'consistent' ? 'consistent' : info.faceDir === 'unclear' ? 'warning' : 'inconsistent';
+    badge.textContent = `得分: ${info.score}  \n${info.formula}`;
+    badge.className = 'item-score-badge ' + cls + (info.score >= 2 ? ' high' : '');
+    badge.style.whiteSpace = 'pre-line';
+  }
+  updateTotalScore();
+}
+
+function updateTotalScore() {
+  let total = 0;
+  let abnormalCount = 0;
+  let topItem = '';
+  let topScore = 0;
+  ITEMS.forEach(item => {
+    const s = calcScore(item.id);
+    total += s;
+    if (s > 0) {
+      abnormalCount++;
+      if (s > topScore) {
+        topScore = s;
+        topItem = item.name;
+      }
+    }
+  });
+  document.getElementById('pseudoTotalScore').textContent = total.toFixed(1);
+  document.getElementById('itemCount').textContent = abnormalCount;
+  document.getElementById('mainFactors').textContent = topItem || '—';
+}
+
+function prevPart() {
+  if (currentPart === 1) {
+    window.location.href = 'face-benchmark.html';
+  } else {
+    currentPart = 1;
+    document.getElementById('part1').style.display = 'block';
+    document.getElementById('part2').style.display = 'none';
+    document.getElementById('subProgress').textContent = '第 1 部分（共2部分）';
+    document.getElementById('nextBtn').textContent = '第2部分 →';
+    document.getElementById('prevBtn').textContent = '← 上一步';
+  }
+}
+
+function nextPart() {
+  if (currentPart === 1) {
+    currentPart = 2;
+    document.getElementById('part1').style.display = 'none';
+    document.getElementById('part2').style.display = 'block';
+    document.getElementById('subProgress').textContent = '第 2 部分（共2部分）';
+    document.getElementById('nextBtn').textContent = '下一步 →';
+    document.getElementById('prevBtn').textContent = '← 第1部分';
+  } else {
+    // Done with pseudo - go to true assessment
+    saveData(true);
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = 'true-assessment.html' + (params.get('client') ? '?client=' + params.get('client') : '');
+  }
+}
+
+function saveData(silent = false) {
+  let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  assessment.pseudoAssessment = pseudoData;
+  let total = 0;
+  ITEMS.forEach(item => { total += calcScore(item.id); });
+  assessment.pseudoScore = total;
+  assessment.updatedAt = new Date().toISOString();
+  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+  if (!silent) alert('✅ 假性评估已保存');
+}
+
+// Init
+const saved = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+if (saved.pseudoAssessment) pseudoData = saved.pseudoAssessment;
+renderPart(PART1, 'part1');
+renderPart(PART2, 'part2');
+updateTotalScore();
+</script>
+</body>
+</html>

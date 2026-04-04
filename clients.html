@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客户列表 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32;
+      --green-light: #4CAF50;
+      --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2;
+      --purple-light: #9C27B0;
+      --bg: #F5F5F5;
+      --card: #FFFFFF;
+      --text: #212121;
+      --text-secondary: #757575;
+      --danger: #D32F2F;
+      --info: #1976D2;
+      --border: #E0E0E0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .topbar {
+      background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar h1 { font-size: 17px; letter-spacing: 1px; }
+    .topbar-right { display: flex; gap: 12px; align-items: center; }
+    .assessor-name { font-size: 13px; opacity: 0.9; }
+    .btn-small {
+      padding: 6px 14px;
+      border: 1.5px solid white;
+      border-radius: 20px;
+      background: transparent;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-small:hover { background: white; color: var(--green-primary); }
+    .container { max-width: 800px; margin: 0 auto; padding: 16px; }
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .search-bar input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      background: var(--card);
+    }
+    .search-bar input:focus { border-color: var(--green-primary); }
+    .btn-new {
+      padding: 10px 20px;
+      background: var(--green-primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .client-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 4px solid var(--green-primary);
+    }
+    .client-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      transform: translateX(2px);
+    }
+    .client-info h3 { font-size: 16px; margin-bottom: 4px; }
+    .client-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; }
+    .client-meta span { display: flex; align-items: center; gap: 3px; }
+    .badge {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-male { background: #E3F2FD; color: var(--info); }
+    .badge-female { background: #FCE4EC; color: #C2185B; }
+    .badge-status-pending { background: #FFF3E0; color: #E65100; }
+    .badge-status-done { background: var(--green-bg); color: var(--green-primary); }
+    .client-actions { display: flex; gap: 8px; }
+    .btn-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { transform: scale(1.1); }
+    .btn-new-assessment { background: var(--green-bg); color: var(--green-primary); }
+    .btn-view { background: #EEE; color: var(--text-secondary); }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+    .tab-bar {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-secondary);
+    }
+    .tab.active {
+      background: var(--green-primary);
+      color: white;
+    }
+    .stat-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      flex: 1;
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .stat-card .num { font-size: 24px; font-weight: 700; color: var(--green-primary); }
+    .stat-card .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .modal h3 { font-size: 18px; margin-bottom: 20px; color: var(--green-primary); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      background: #FAFAFA;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--green-primary); background: white; }
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-cancel { background: #EEE; color: var(--text-secondary); }
+    .btn-confirm { background: var(--green-primary); color: white; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🌿 LINN 面部歪斜评估系统</h1>
+  <div class="topbar-right">
+    <span class="assessor-name" id="assessorName">评估师</span>
+    <button class="btn-small" onclick="window.location.href='index.html'">退出</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="stat-bar">
+    <div class="stat-card">
+      <div class="num" id="totalClients">-</div>
+      <div class="label">总客户数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="totalAssessments">-</div>
+      <div class="label">评估总数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="pendingCount">-</div>
+      <div class="label">进行中</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" data-filter="all">全部</div>
+    <div class="tab" data-filter="pending">进行中</div>
+    <div class="tab" data-filter="done">已完成</div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="搜索客户姓名、备注...">
+    <button class="btn-new" id="newClientBtn">+ 新建客户</button>
+  </div>
+
+  <div id="clientList"></div>
+</div>
+
+<!-- 新建客户弹窗 -->
+<div class="modal-overlay" id="newClientModal">
+  <div class="modal">
+    <h3>新建客户档案</h3>
+    <div class="form-group">
+      <label>姓名 *</label>
+      <input type="text" id="newName" placeholder="请输入客户姓名">
+    </div>
+    <div class="form-group">
+      <label>性别</label>
+      <select id="newGender">
+        <option value="">未选择</option>
+        <option value="男">男</option>
+        <option value="女">女</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>年龄</label>
+      <input type="number" id="newAge" placeholder="年龄" min="1" max="120">
+    </div>
+    <div class="form-group">
+      <label>电话</label>
+      <input type="tel" id="newPhone" placeholder="手机号码">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-confirm" id="confirmNewClient">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_KEY = localStorage.getItem('linn_airtable_key') || '';
+const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
+const ASSESSOR_NAME = localStorage.getItem('linn_assessor_name') || '演示评估师';
+let allClients = [];
+let currentFilter = 'all';
+
+document.getElementById('assessorName').textContent = ASSESSOR_NAME;
+
+// Tab filtering
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    renderClients();
+  });
+});
+
+// Search
+document.getElementById('searchInput').addEventListener('input', renderClients);
+
+// New client modal
+document.getElementById('newClientBtn').addEventListener('click', () => {
+  // 直接跳基础信息页，不弹窗
+  window.location.href = 'basic-info.html?client=new';
+});
+
+function closeModal() {
+  document.getElementById('newClientModal').classList.remove('show');
+}
+
+document.getElementById('confirmNewClient').addEventListener('click', async () => {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { alert('请输入姓名'); return; }
+  const fields = {
+    Name: name,
+    Gender: document.getElementById('newGender').value,
+    Age: parseInt(document.getElementById('newAge').value) || 0,
+    Phone: document.getElementById('newPhone').value,
+    Assessor: ASSESSOR_NAME,
+    CreatedAt: new Date().toISOString().split('T')[0]
+  };
+
+  // Demo mode: create locally
+  if (!API_KEY || !BASE_ID) {
+    const newClient = {
+      id: 'demo_' + Date.now(),
+      fields: fields,
+      _assessments: []
+    };
+    allClients.push(newClient);
+    closeModal();
+    document.getElementById('totalClients').textContent = allClients.length;
+    document.getElementById('totalAssessments').textContent = allClients.reduce((sum, c) => sum + (c._assessments ? c._assessments.length : 0), 0);
+    document.getElementById('pendingCount').textContent = allClients.filter(c => c._assessments && c._assessments.some(a => a.fields && a.fields.Status === '进行中')).length;
+    renderClients();
+    window.location.href = `basic-info.html?client=${newClient.id}`;
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields })
+    });
+    if (res.ok) {
+      closeModal();
+      loadClients();
+    } else {
+      alert('创建失败，请检查Airtable配置');
+    }
+  } catch (e) {
+    alert('创建失败：' + e.message);
+  }
+});
+
+async function loadClients() {
+  if (!API_KEY || !BASE_ID) {
+    // Demo mode
+    document.getElementById('totalClients').textContent = '2';
+    document.getElementById('totalAssessments').textContent = '3';
+    document.getElementById('pendingCount').textContent = '1';
+    allClients = [
+      { id: 'demo1', fields: { Name: '王小姐', Gender: '女', Age: 28, Assessor: '演示评估师', Phone: '138****1234' }, _assessments: [{ status: '已完成' }] },
+      { id: 'demo2', fields: { Name: '李先生', Gender: '男', Age: 35, Assessor: '演示评估师', Phone: '139****5678' }, _assessments: [{ status: '进行中' }] }
+    ];
+    renderClients();
+    return;
+  }
+  try {
+    const [clientsRes, assessmentsRes] = await Promise.all([
+      fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients?filterByFormula=Assessor="${ASSESSOR_NAME}"&sort[0][field]=Name&sort[0][direction]=asc`, {
+        headers: { Authorization: `Bearer ${API_KEY}` }
+      }),
+      fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments?filterByFormula=Assessor="${ASSESSOR_NAME}"`, {
+        headers: { Authorization: `Bearer ${API_KEY}` }
+      })
+    ]);
+    const clientsData = await clientsRes.json();
+    const assessmentsData = await assessmentsRes.json();
+    allClients = clientsData.records || [];
+    const assessments = assessmentsData.records || [];
+
+    document.getElementById('totalClients').textContent = allClients.length;
+    document.getElementById('totalAssessments').textContent = assessments.length;
+    document.getElementById('pendingCount').textContent = assessments.filter(a => a.fields.Status === '进行中').length;
+
+    // Attach assessment counts to clients
+    allClients.forEach(c => {
+      c._assessments = assessments.filter(a => a.fields.Client && a.fields.Client[0] === c.id);
+    });
+    renderClients();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderClients() {
+  const container = document.getElementById('clientList');
+  const keyword = document.getElementById('searchInput').value.toLowerCase();
+
+  let filtered = allClients;
+  if (currentFilter === 'pending') {
+    filtered = allClients.filter(c => c._assessments.some(a => a.fields.Status === '进行中'));
+  } else if (currentFilter === 'done') {
+    filtered = allClients.filter(c => c._assessments.length > 0 && c._assessments.every(a => a.fields.Status === '已完成'));
+  }
+
+  if (keyword) {
+    filtered = filtered.filter(c =>
+      c.fields.Name.toLowerCase().includes(keyword) ||
+      (c.fields.Phone || '').includes(keyword)
+    );
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <p>暂无客户记录<br><span style="font-size:12px;color:#999">点击右上角"新建客户"开始</span></p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(c => {
+    const lastAssessment = c._assessments[c._assessments.length - 1];
+    const statusBadge = lastAssessment
+      ? `<span class="badge ${lastAssessment.fields.Status === '已完成' ? 'badge-status-done' : 'badge-status-pending'}">${lastAssessment.fields.Status || '进行中'}</span>`
+      : `<span class="badge badge-status-pending">未评估</span>`;
+    return `
+    <div class="client-card" onclick="window.location.href='basic-info.html?client=${c.id}'">
+      <div class="client-info">
+        <h3>${c.fields.Name} ${c.fields.Gender ? `<span class="badge badge-${c.fields.Gender === '男' ? 'male' : 'female'}">${c.fields.Gender}</span>` : ''}</h3>
+        <div class="client-meta">
+          ${c.fields.Age ? `<span>${c.fields.Age}岁</span>` : ''}
+          ${c.fields.Phone ? `<span>📱 ${c.fields.Phone}</span>` : ''}
+          <span>📅 ${c.fields.CreatedAt || new Date().toISOString().split('T')[0]}</span>
+        </div>
+      </div>
+      <div class="client-actions">
+        ${statusBadge}
+        <button class="btn-icon btn-new-assessment" onclick="event.stopPropagation(); startAssessment('${c.id}')" title="新建评估">➕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startAssessment(clientId) {
+  window.location.href = `basic-info.html?client=${clientId}`;
+}
+
+// Load
+loadClients();
+</script>
+</body>
+</html>

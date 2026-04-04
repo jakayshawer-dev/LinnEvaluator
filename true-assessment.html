@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>真性评估 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0; --purple-bg: #F3E5F5;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --info: #1976D2; --border: #E0E0E0; --warning: #F57C00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    .progress-bar {
+      background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+      color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .progress-bar .step { font-size: 13px; opacity: 0.8; }
+    .progress-bar .title { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+    .progress-dots { display: flex; gap: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+    .dot.active { background: white; width: 20px; border-radius: 4px; }
+    .dot.done { background: #CE93D8; }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }
+    .info-banner {
+      background: linear-gradient(135deg, #F3E5F5, var(--green-bg));
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+      font-size: 13px; line-height: 1.7; border-left: 4px solid var(--purple-primary);
+    }
+    .type-card {
+      background: var(--card); border-radius: 14px; padding: 18px;
+      margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-left: 5px solid var(--purple-primary);
+    }
+    .type-card.dominant { border-left-color: var(--danger); box-shadow: 0 4px 16px rgba(123,31,162,0.15); }
+    .type-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .type-name { font-size: 18px; font-weight: 800; color: var(--purple-primary); }
+    .type-score-box { text-align: right; }
+    .type-score-box .score { font-size: 28px; font-weight: 800; color: var(--purple-primary); }
+    .type-score-box .max { font-size: 12px; color: var(--text-secondary); }
+    .type-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6; }
+    .type-result-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .badge-高度 { background: #FFEBEE; color: var(--danger); }
+    .badge-中度 { background: #FFF3E0; color: #E65100; }
+    .badge-轻度 { background: #FFFDE7; color: #F9A825; }
+    .badge-否 { background: #EEE; color: #757575; }
+    .badge-未评 { background: #F5F5F5; color: #BDBDBD; }
+
+    /* Direction row */
+    .dir-section {
+      background: var(--purple-bg); border-radius: 10px; padding: 12px; margin-bottom: 14px;
+    }
+    .dir-label { font-size: 12px; font-weight: 700; color: var(--purple-primary); margin-bottom: 8px; }
+    .dir-row { display: flex; gap: 8px; }
+    .dir-btn {
+      flex: 1; padding: 9px; border: 2px solid var(--border); border-radius: 8px;
+      text-align: center; font-size: 13px; cursor: pointer; transition: all 0.2s;
+      background: white; color: var(--text-secondary); font-weight: 600;
+    }
+    .dir-btn:hover { border-color: var(--purple-primary); }
+    .dir-btn.selected-left { border-color: var(--info); background: #E3F2FD; color: var(--info); font-weight: 700; }
+    .dir-btn.selected-right { border-color: var(--danger); background: #FFEBEE; color: var(--danger); font-weight: 700; }
+    .dir-btn.selected-na { border-color: #9E9E9E; background: #EEE; color: #757575; font-weight: 700; }
+
+    /* Sub-questions */
+    .sub-q-header {
+      font-size: 12px; font-weight: 700; color: var(--text-secondary);
+      margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    }
+    .sub-q-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0; border-bottom: 1px dashed #F0F0F0;
+    }
+    .sub-q-item:last-child { border-bottom: none; }
+    .sub-q-num {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--purple-bg);
+      color: var(--purple-primary); font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+    }
+    .sub-q-text { flex: 1; font-size: 13px; color: var(--text); line-height: 1.5; }
+    .sub-q-btns { display: flex; gap: 6px; flex-shrink: 0; }
+    .sub-q-btn {
+      padding: 5px 14px; border: 2px solid var(--border); border-radius: 20px;
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+      background: white; color: var(--text-secondary);
+    }
+    .sub-q-btn:hover { border-color: var(--purple-primary); }
+    .sub-q-btn.selected-yes { border-color: var(--green-primary); background: var(--green-bg); color: var(--green-primary); }
+    .sub-q-btn.selected-no { border-color: var(--danger); background: #FFEBEE; color: var(--danger); }
+
+    /* Fit level display */
+    .fit-level-row {
+      display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;
+    }
+    .fit-btn {
+      flex: 1; min-width: 70px; padding: 7px 4px; border: 2px solid var(--border); border-radius: 8px;
+      text-align: center; font-size: 11px; cursor: pointer; transition: all 0.2s;
+      background: white; color: var(--text-secondary); font-weight: 600;
+    }
+    .fit-btn.selected-0 { border-color: #BDBDBD; background: #EEE; color: #757575; font-weight: 700; }
+    .fit-btn.selected-1 { border-color: #FFF176; background: #FFFDE7; color: #F9A825; font-weight: 700; }
+    .fit-btn.selected-2 { border-color: #FFB74D; background: #FFF3E0; color: #E65100; font-weight: 700; }
+    .fit-btn.selected-3 { border-color: #E57373; background: #FFEBEE; color: #C62828; font-weight: 700; }
+
+    .auto-save-badge {
+      position: fixed; top: 70px; right: 16px; background: var(--purple-bg); color: var(--purple-primary);
+      padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s; z-index: 99;
+    }
+    .auto-save-badge.show { opacity: 1; }
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      padding: 12px 16px; display: flex; gap: 10px; box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      max-width: 600px; margin: 0 auto; z-index: 100;
+    }
+    .btn { flex: 1; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-prev { background: #EEE; color: var(--text-secondary); }
+    .btn-next { background: linear-gradient(135deg, var(--purple-primary), var(--purple-light)); color: white; }
+    .btn-save { background: var(--green-primary); color: white; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar">
+  <div class="step">步骤 5/5</div>
+  <div class="progress-dots">
+    <div class="dot done">✓</div><div class="dot done">✓</div><div class="dot done">✓</div><div class="dot done">✓</div><div class="dot active"></div>
+  </div>
+  <div class="title">真性评估</div>
+</div>
+
+<div class="auto-save-badge" id="saveBadge">✓ 已保存</div>
+
+<div class="container">
+  <div class="info-banner">
+    💡 <strong>评分规则：</strong>每型先判断偏斜方向，再通过5个子问题验证。<br>
+    子问题答"是"≥3个 = 高度符合(3分)；2个 = 中度(2分)；1个 = 轻度(1分)；0个 = 否(0分)
+  </div>
+
+  <div id="typeCards"></div>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn btn-prev" onclick="window.location.href='pseudo-assessment.html'">← 上一步</button>
+  <button class="btn btn-save" onclick="saveData(true)">💾 保存</button>
+  <button class="btn btn-next" onclick="goResult()">查看结果 →</button>
+</div>
+
+<script>
+// 每种类型的子问题配置
+const SUB_QUESTIONS = {
+  muscle: [
+    '是否存在单侧咀嚼肌/翼内肌的明显肥厚？',
+    '下颌角外扩程度是否明显？',
+    '口角高度不对称是否明显？',
+    '动态表情时是否一侧控制力明显差？',
+    '触诊时是否一侧肌肉张力/紧绷感更明显？'
+  ],
+  fascial: [
+    '是否有一侧苹果肌明显高于另一侧？',
+    '颧骨区是否呈现被拉扯/斜向拖拽感？',
+    '面部皮肤紧致度是否存在明显差异？',
+    '颈部或锁骨上部是否存在筋膜紧张感？',
+    '是否存在面部软组织挤压或积聚现象？'
+  ],
+  compensatory: [
+    '是否有一侧肌肉明显过度代偿？',
+    '下巴是否有前突或后缩现象？',
+    '头位是否存在明显前伸或后仰？',
+    '面部是否一侧皮肤松弛、另一侧紧绷？',
+    '肩颈是否存在过度代偿的肌肉活跃？'
+  ],
+  bone: [
+    '面部骨架是否存在明显骨性不对称？',
+    '颞下颌关节是否存在明显压痛或错位？',
+    '下颌角/颧骨是否一侧突出、另一侧内凹？',
+    '触诊时是否可感知明显骨性硬度差或错位？',
+    '面部中线在动态时是否明显不稳定/偏移？'
+  ],
+  nerve: [
+    '动态表情时是否一侧面部明显迟缓？',
+    '眼睑闭合是否一侧明显不全/眼裂较大？',
+    '面部皮肤触诊温度或感觉是否存在差异？',
+    '咀嚼/发音时是否存在明显不协调？',
+    '表情时是否一侧肌肉反应过度或完全缺失？'
+  ]
+};
+
+const TYPES = [
+  { id: 'muscle', name: '肌肉型', desc: '面部肌肉发育或使用不对称导致的大小脸，如单侧咬肌肥大、单侧面部表情肌力量不平衡等。' },
+  { id: 'fascial', name: '筋膜型', desc: '面部筋膜层张力不均导致的不对称，筋膜紧张侧更紧绷、更小；另一侧更松垮、显得更大。' },
+  { id: 'compensatory', name: '代偿型', desc: '因其他部位问题引发的面部代偿反应，如牙齿咬合偏侧、单侧咀嚼习惯、视力不平衡等导致。' },
+  { id: 'bone', name: '骨性型', desc: '面部骨骼结构性问题导致的不对称，如颧骨发育不一致、下颌骨偏斜、颌骨不对称等结构性差异。' },
+  { id: 'nerve', name: '神经型', desc: '面部神经功能问题导致的不对称，如面神经某支张力过高或功能亢进，导致双侧面部表情不一致。' }
+];
+
+const FIT_LABELS = ['否', '轻度', '中度', '高度符合'];
+const FIT_BADGES = ['badge-否', 'badge-轻度', 'badge-中度', 'badge-高度'];
+
+let trueData = {};
+let saveTimeout;
+
+function triggerAutoSave() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveData(true);
+    document.getElementById('saveBadge').classList.add('show');
+    setTimeout(() => document.getElementById('saveBadge').classList.remove('show'), 2000);
+  }, 800);
+}
+
+function calcFitLevel(typeId) {
+  const d = trueData[typeId];
+  if (!d || !Array.isArray(d.subs)) return 0;
+  const yesCount = d.subs.filter(s => s === true).length;
+  if (yesCount >= 3) return 3;
+  if (yesCount === 2) return 2;
+  if (yesCount === 1) return 1;
+  return 0;
+}
+
+function calcScore(typeId) {
+  const level = calcFitLevel(typeId);
+  return level !== null ? level : 0;
+}
+
+function renderTypes() {
+  const container = document.getElementById('typeCards');
+  container.innerHTML = TYPES.map(t => {
+    const d = trueData[t.id] || {};
+    const subs = d.subs || [];
+    const fitLevel = calcFitLevel(t.id);
+    const score = calcScore(t.id);
+    const subQs = SUB_QUESTIONS[t.id] || [];
+
+    return `
+    <div class="type-card" id="card_${t.id}">
+      <div class="type-header">
+        <div class="type-name">${t.name}</div>
+        <div class="type-score-box">
+          <div class="score" id="score_${t.id}">${score}</div>
+          <div class="max">最高3分</div>
+        </div>
+      </div>
+      <div class="type-result-badge ${fitLevel !== null ? FIT_BADGES[fitLevel] : 'badge-未评'}" id="badge_${t.id}">
+        ${fitLevel !== null ? FIT_LABELS[fitLevel] + '（' + score + '分）' : '请先完成方向和子问题'}
+      </div>
+      <div class="type-desc">${t.desc}</div>
+
+      <div class="dir-section">
+        <div class="dir-label">① 偏斜方向（哪侧有问题？）</div>
+        <div class="dir-row">
+          <div class="dir-btn ${d.direction === 'left' ? 'selected-left' : ''}" id="${t.id}_dir_left" onclick="setDir('${t.id}','left')">偏左</div>
+          <div class="dir-btn ${d.direction === 'right' ? 'selected-right' : ''}" id="${t.id}_dir_right" onclick="setDir('${t.id}','right')">偏右</div>
+          <div class="dir-btn ${d.direction === 'na' ? 'selected-na' : ''}" id="${t.id}_dir_na" onclick="setDir('${t.id}','na')">不适用</div>
+        </div>
+      </div>
+
+      <div class="sub-q-header">② 验证问题（该类型存在的证据）</div>
+      ${subQs.map((q, qi) => `
+        <div class="sub-q-item">
+          <div class="sub-q-num">${qi + 1}</div>
+          <div class="sub-q-text">${q}</div>
+          <div class="sub-q-btns">
+            <div class="sub-q-btn ${subs[qi] === true ? 'selected-yes' : ''}" id="${t.id}_q${qi}_yes" onclick="setSub('${t.id}',${qi},true)">是</div>
+            <div class="sub-q-btn ${subs[qi] === false ? 'selected-no' : ''}" id="${t.id}_q${qi}_no" onclick="setSub('${t.id}',${qi},false)">否</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('');
+}
+
+function setDir(typeId, val) {
+  if (!trueData[typeId]) trueData[typeId] = {};
+  if (!Array.isArray(trueData[typeId].subs)) trueData[typeId].subs = [null,null,null,null,null];
+  trueData[typeId].direction = val;
+  document.querySelectorAll(`[id^="${typeId}_dir_"]`).forEach(b => {
+    b.classList.remove('selected-left', 'selected-right', 'selected-na');
+  });
+  document.getElementById(`${typeId}_dir_${val}`).classList.add(
+    val === 'left' ? 'selected-left' : val === 'right' ? 'selected-right' : 'selected-na'
+  );
+  updateTypeScore(typeId);
+  triggerAutoSave();
+}
+
+function setSub(typeId, qi, val) {
+  if (!trueData[typeId]) trueData[typeId] = {};
+  if (!Array.isArray(trueData[typeId].subs)) trueData[typeId].subs = [null,null,null,null,null];
+  trueData[typeId].subs[qi] = val;
+  const btnYes = document.getElementById(`${typeId}_q${qi}_yes`);
+  const btnNo = document.getElementById(`${typeId}_q${qi}_no`);
+  btnYes.classList.remove('selected-yes');
+  btnNo.classList.remove('selected-no');
+  if (val === true) btnYes.classList.add('selected-yes');
+  else btnNo.classList.add('selected-no');
+  updateTypeScore(typeId);
+  triggerAutoSave();
+}
+
+function updateTypeScore(typeId) {
+  const score = calcScore(typeId);
+  const fitLevel = calcFitLevel(typeId);
+  document.getElementById(`score_${typeId}`).textContent = score;
+  const badge = document.getElementById(`badge_${typeId}`);
+  if (fitLevel !== null) {
+    badge.textContent = FIT_LABELS[fitLevel] + '（' + score + '分）';
+    badge.className = 'type-result-badge ' + FIT_BADGES[fitLevel];
+  } else {
+    badge.textContent = '请先完成方向和子问题';
+    badge.className = 'type-result-badge badge-未评';
+  }
+}
+
+function goResult() {
+  saveData(true);
+  const params = new URLSearchParams(window.location.search);
+  window.location.href = 'result.html' + (params.get('client') ? '?client=' + params.get('client') : '');
+}
+
+function saveData(silent = false) {
+  let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  assessment.trueAssessment = trueData;
+  let total = 0;
+  TYPES.forEach(t => { total += calcScore(t.id); });
+  assessment.trueScore = total;
+  assessment.updatedAt = new Date().toISOString();
+  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+  if (!silent) alert('✅ 真性评估已保存');
+}
+
+// Init
+const saved = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+if (saved.trueAssessment) {
+  // Normalize subs to array (handles null/undefined cases)
+  TYPES.forEach(t => {
+    if (!saved.trueAssessment[t.id]) saved.trueAssessment[t.id] = {};
+    if (!Array.isArray(saved.trueAssessment[t.id].subs)) {
+      saved.trueAssessment[t.id].subs = [null, null, null, null, null];
+    }
+  });
+  trueData = saved.trueAssessment;
+}
+renderTypes();
+</script>
+</body>
+</html>

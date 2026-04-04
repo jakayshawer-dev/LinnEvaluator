@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>总览预判 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0; --purple-bg: #F3E5F5;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --info: #1976D2; --border: #E0E0E0; --warning: #F57C00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    .progress-bar {
+      background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
+      color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .progress-bar .step { font-size: 13px; opacity: 0.8; }
+    .progress-bar .title { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+    .progress-dots { display: flex; gap: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+    .dot.active { background: white; width: 20px; border-radius: 4px; }
+    .dot.done { background: #A5D6A7; }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 120px; }
+
+    /* Header notice */
+    .notice-banner {
+      background: linear-gradient(135deg, #E3F2FD, #F3E5F5);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+      font-size: 13px; line-height: 1.7; border-left: 4px solid var(--purple-primary);
+    }
+
+    /* Direction badge fixed */
+    .direction-bar {
+      background: var(--card); border-radius: 10px; padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .direction-bar .label { color: var(--text-secondary); font-weight: 600; }
+    .direction-badge {
+      padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    }
+    .dir-left { background: #E3F2FD; color: var(--info); }
+    .dir-right { background: #FFEBEE; color: var(--danger); }
+    .dir-unclear { background: #EEE; color: var(--text-secondary); }
+
+    /* Question card */
+    .q-card {
+      background: var(--card); border-radius: 14px; padding: 18px;
+      margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-left: 5px solid var(--green-primary);
+    }
+    .q-card.q-odd { border-left-color: var(--green-primary); }
+    .q-card.q-even { border-left-color: var(--purple-primary); }
+    .q-num {
+      display: inline-block; width: 26px; height: 26px; border-radius: 50%;
+      background: var(--green-primary); color: white; font-size: 13px; font-weight: 700;
+      text-align: center; line-height: 26px; margin-bottom: 8px;
+    }
+    .q-card.q-even .q-num { background: var(--purple-primary); }
+    .q-text { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.6; margin-bottom: 14px; }
+    .option-row { display: flex; gap: 8px; }
+    .opt-btn {
+      flex: 1; padding: 10px 6px; border: 2px solid var(--border); border-radius: 10px;
+      text-align: center; font-size: 13px; cursor: pointer; transition: all 0.2s;
+      background: white; color: var(--text-secondary); font-weight: 600;
+    }
+    .opt-btn:hover { border-color: var(--green-primary); }
+    .opt-btn.selected-p { border-color: var(--green-primary); background: var(--green-bg); color: var(--green-primary); font-weight: 700; }
+    .opt-btn.selected-t { border-color: var(--purple-primary); background: var(--purple-bg); color: var(--purple-primary); font-weight: 700; }
+    .opt-btn.selected-mix { border-color: var(--warning); background: #FFF3E0; color: var(--warning); font-weight: 700; }
+    .opt-btn.selected-none { border-color: #BDBDBD; background: #EEE; color: #757575; font-weight: 700; }
+
+    /* Collapsible hint */
+    .hint-toggle {
+      display: flex; align-items: center; gap: 6px; margin-top: 12px;
+      font-size: 12px; color: var(--text-secondary); cursor: pointer;
+      padding: 6px 10px; border-radius: 6px; background: #F5F5F5;
+      transition: all 0.2s; user-select: none;
+    }
+    .hint-toggle:hover { background: #EEEEEE; }
+    .hint-toggle .arrow { transition: transform 0.2s; font-size: 10px; }
+    .hint-toggle.open .arrow { transform: rotate(90deg); }
+    .hint-content {
+      display: none; margin-top: 10px; padding: 12px;
+      background: #FFF8E1; border-radius: 8px; border-left: 3px solid var(--warning);
+      font-size: 12px; color: var(--text); line-height: 1.7;
+    }
+    .hint-content.open { display: block; }
+    .hint-content strong { color: var(--warning); }
+    .hint-score { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .score-tag {
+      padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+    }
+    .tag-pseudo { background: var(--green-bg); color: var(--green-primary); }
+    .tag-true { background: var(--purple-bg); color: var(--purple-primary); }
+    .tag-mixed { background: #FFF3E0; color: var(--warning); }
+
+    /* Result bar */
+    .result-bar {
+      background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+      color: white; border-radius: 14px; padding: 18px 20px; margin: 20px 0;
+    }
+    .result-bar .label { font-size: 12px; opacity: 0.85; margin-bottom: 8px; }
+    .result-scores { display: flex; justify-content: space-around; margin-bottom: 12px; }
+    .result-scores .big { font-size: 28px; font-weight: 900; }
+    .result-scores .lbl { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+    .result-bar .tendency {
+      text-align: center; padding: 8px 16px; border-radius: 20px;
+      background: rgba(255,255,255,0.2); font-size: 13px; font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* Bottom fixed notice */
+    .bottom-notice {
+      position: fixed; bottom: 70px; left: 0; right: 0;
+      background: #FFF8E1; border-top: 2px solid var(--warning);
+      padding: 10px 16px; font-size: 12px; color: #5D4037;
+      text-align: center; max-width: 600px; margin: 0 auto;
+      z-index: 99;
+    }
+
+    .auto-save-badge {
+      position: fixed; top: 70px; right: 16px; background: var(--green-bg); color: var(--green-primary);
+      padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s; z-index: 99;
+    }
+    .auto-save-badge.show { opacity: 1; }
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      padding: 12px 16px; display: flex; gap: 10px; box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      max-width: 600px; margin: 0 auto; z-index: 100;
+    }
+    .btn { flex: 1; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-prev { background: #EEE; color: var(--text-secondary); }
+    .btn-next { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; }
+    .btn-save { background: var(--purple-primary); color: white; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar">
+  <div class="step">步骤 2/5</div>
+  <div class="progress-dots">
+    <div class="dot done">✓</div><div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="title">总览预判</div>
+</div>
+
+<div class="auto-save-badge" id="saveBadge">✓ 已保存</div>
+
+<div class="container">
+
+  <div class="notice-banner">
+    💡 <strong>页面定位：</strong>本页用于建立真假大小脸的总览倾向判断，仅作为预测，不直接替代最终综合结论。完成本页后，仍需继续完成假性模块与真性模块，系统才输出最终综合判定。
+  </div>
+
+  <!-- Direction bar -->
+  <div class="direction-bar">
+    <span class="label">📐 当前面部主偏斜方向</span>
+    <span class="direction-badge dir-unclear" id="directionBadge">— 未评估</span>
+  </div>
+
+  <!-- Questions -->
+  <div id="questionsContainer"></div>
+
+  <!-- Internal score display -->
+  <div class="result-bar">
+    <div class="label">内部预判分（不公开，仅供评估师参考）</div>
+    <div class="result-scores">
+      <div style="text-align:center;">
+        <div class="big" id="pseudoPreviewScore">0</div>
+        <div class="lbl">假性初分</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="big" id="truePreviewScore">0</div>
+        <div class="lbl">真性初分</div>
+      </div>
+    </div>
+    <div class="tendency" id="tendencyText">请完成全部7题</div>
+  </div>
+
+</div>
+
+<!-- Bottom fixed notice -->
+<div class="bottom-notice">
+  ⚠️ 本页结果为总览预判，不替代最终结论。请继续完成假性评估模块与真性评估模块。
+</div>
+
+<div class="bottom-bar">
+  <button class="btn btn-prev" onclick="window.location.href='basic-info.html'">← 上一步</button>
+  <button class="btn btn-save" onclick="saveData(true)">💾 保存</button>
+  <button class="btn btn-next" onclick="goNext()">面部基准 →</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    id: 'q1',
+    text: '头位调整至中立位后，面部左右不对称是否明显减轻？',
+    options: [
+      { label: 'A. 明显减轻', pseudo: 3, true: 0, type: 'p' },
+      { label: 'B. 轻度减轻', pseudo: 1, true: 1, type: 'mix' },
+      { label: 'C. 基本无变化', pseudo: 0, true: 3, type: 't' }
+    ],
+    hint: '重点观察眉眼线、鼻尖—颏尖中线、口角高低、双侧面部宽窄差。若头位调整后整体视觉偏差明显回落，更支持假性因素；若调整后差异仍稳定存在，更支持真性因素。'
+  },
+  {
+    id: 'q2',
+    text: '仰卧位下，面部左右不对称是否较站立位明显减轻？',
+    options: [
+      { label: 'A. 明显减轻', pseudo: 3, true: 0, type: 'p' },
+      { label: 'B. 轻度减轻', pseudo: 1, true: 1, type: 'mix' },
+      { label: 'C. 基本无变化', pseudo: 0, true: 3, type: 't' }
+    ],
+    hint: '仰卧位主要用于去除站立位的重力影响与部分头颈代偿干扰。若仰卧后不对称明显减轻，更支持假性；若仰卧后差异仍稳定存在，更支持真性。'
+  },
+  {
+    id: 'q3',
+    text: '动态表情状态下，面部左右不对称是否仍明显存在？',
+    options: [
+      { label: 'A. 明显存在', pseudo: 0, true: 2, type: 't' },
+      { label: 'B. 轻度存在', pseudo: 0, true: 1, type: 't' },
+      { label: 'C. 不明显', pseudo: 1, true: 0, type: 'p' }
+    ],
+    hint: '建议在自然说话、轻闭口、微笑、轻提口角等状态下观察。若动态状态下不对称仍明显存在，更支持真性中的肌肉募集差、神经控制差或已固定的结构差。'
+  },
+  {
+    id: 'q4',
+    text: '在头位已调整至中立位的前提下，动态不对称是否仍持续存在？',
+    options: [
+      { label: 'A. 是', pseudo: 0, true: 2, type: 't' },
+      { label: 'B. 否', pseudo: 2, true: 0, type: 'p' },
+      { label: 'C. 不确定', pseudo: 0, true: 0, type: 'none' }
+    ],
+    hint: '本题用于进一步排除单纯姿势干扰。若头位已调正而动态不对称仍存在，更支持真性；若头位调正后动态差异同步减轻，更支持假性。'
+  },
+  {
+    id: 'q5',
+    text: '触诊双侧咬肌、颞肌及相关软组织时，是否存在明确的厚度差、硬度差或募集差？',
+    options: [
+      { label: 'A. 明显存在', pseudo: 0, true: 2, type: 't' },
+      { label: 'B. 轻度存在', pseudo: 0, true: 1, type: 't' },
+      { label: 'C. 无明显差异', pseudo: 1, true: 0, type: 'p' }
+    ],
+    hint: '本题重点不是"看起来大小不同"，而是"摸起来是否存在稳定差异"。若存在明确厚度差、硬度差或一侧募集明显占优，更支持真性中的肌肉型、筋膜型或代偿型。'
+  },
+  {
+    id: 'q6',
+    text: '轻咬合或自然闭口状态下，上下中线偏斜、下巴偏移或闭口偏位是否稳定存在？',
+    options: [
+      { label: 'A. 明显存在', pseudo: 0, true: 2, type: 't' },
+      { label: 'B. 轻度存在', pseudo: 0, true: 1, type: 't' },
+      { label: 'C. 无明显偏斜', pseudo: 1, true: 0, type: 'p' }
+    ],
+    hint: '本题重点观察咬合中线、下颏点位置、闭口路径是否长期稳定偏向同一侧。若上述偏斜稳定存在，更支持真性，尤其需警惕骨性参与度。'
+  },
+  {
+    id: 'q7',
+    text: '在站立位、坐位与仰卧位之间切换时，面部左右不对称是否均较稳定存在？',
+    options: [
+      { label: 'A. 稳定存在', pseudo: 0, true: 2, type: 't' },
+      { label: 'B. 部分存在', pseudo: 1, true: 1, type: 'mix' },
+      { label: 'C. 不稳定 / 变化明显', pseudo: 2, true: 0, type: 'p' }
+    ],
+    hint: '若不同体位下差异都较稳定，更支持真性结构差；若体位变化后差异起伏明显，更支持假性因素主导。'
+  }
+];
+
+let answers = {};
+let saveTimeout;
+
+function renderQuestions() {
+  const container = document.getElementById('questionsContainer');
+  container.innerHTML = QUESTIONS.map((q, idx) => `
+    <div class="q-card ${idx % 2 === 0 ? 'q-odd' : 'q-even'}">
+      <div class="q-num">${idx + 1}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="option-row" id="opts_${q.id}">
+        ${q.options.map((opt, oi) => `
+          <div class="opt-btn"
+               id="${q.id}_opt_${oi}"
+               data-q="${q.id}"
+               data-idx="${oi}"
+               onclick="selectOption('${q.id}', ${oi})">${opt.label}</div>
+        `).join('')}
+      </div>
+      <div class="hint-toggle" id="hint_toggle_${q.id}" onclick="toggleHint('${q.id}')">
+        <span class="arrow">▶</span> 查看判定说明（内部参考）
+      </div>
+      <div class="hint-content" id="hint_${q.id}">
+        ${q.hint}
+        <div class="hint-score" id="scores_${q.id}">
+          ${q.options.map((opt, oi) => `
+            <span class="score-tag ${
+              opt.type === 'p' ? 'tag-pseudo' : opt.type === 't' ? 'tag-true' : 'tag-mixed'
+            }">${opt.label.replace(/^[ABC]\.\s*/, '')} → ${
+              opt.type === 'p' ? `假性+${opt.pseudo}` : opt.type === 't' ? `真性+${opt.true}` : '0'
+            }</span>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Restore saved answers
+  Object.keys(answers).forEach(qId => {
+    const idx = answers[qId];
+    applySelection(qId, idx);
+  });
+}
+
+function applySelection(qId, optIdx) {
+  const q = QUESTIONS.find(q => q.id === qId);
+  const opt = q.options[optIdx];
+  // Remove all selected classes
+  document.querySelectorAll(`[id^="${qId}_opt_"]`).forEach(b => {
+    b.classList.remove('selected-p', 'selected-t', 'selected-mix', 'selected-none');
+  });
+  const btn = document.getElementById(`${qId}_opt_${optIdx}`);
+  if (opt.type === 'p') btn.classList.add('selected-p');
+  else if (opt.type === 't') btn.classList.add('selected-t');
+  else if (opt.type === 'mix') btn.classList.add('selected-mix');
+  else btn.classList.add('selected-none');
+}
+
+function selectOption(qId, optIdx) {
+  answers[qId] = optIdx;
+  applySelection(qId, optIdx);
+  updateScores();
+  triggerAutoSave();
+}
+
+function toggleHint(qId) {
+  const toggle = document.getElementById(`hint_toggle_${qId}`);
+  const content = document.getElementById(`hint_${qId}`);
+  toggle.classList.toggle('open');
+  content.classList.toggle('open');
+}
+
+function updateScores() {
+  let pseudoTotal = 0;
+  let trueTotal = 0;
+  let answeredCount = Object.keys(answers).length;
+
+  QUESTIONS.forEach(q => {
+    if (answers[q.id] !== undefined) {
+      const opt = q.options[answers[q.id]];
+      pseudoTotal += opt.pseudo;
+      trueTotal += opt.true;
+    }
+  });
+
+  document.getElementById('pseudoPreviewScore').textContent = pseudoTotal;
+  document.getElementById('truePreviewScore').textContent = trueTotal;
+
+  let tendency = '请完成全部7题';
+  if (answeredCount === 7) {
+    const diff = Math.abs(pseudoTotal - trueTotal);
+    if (pseudoTotal >= trueTotal + 3) {
+      tendency = '◉ 假性倾向明显';
+    } else if (trueTotal >= pseudoTotal + 3) {
+      tendency = '◉ 真性倾向明显';
+    } else {
+      tendency = '◉ 真假混合倾向';
+    }
+  } else {
+    tendency = `已答 ${answeredCount}/7 题`;
+  }
+  document.getElementById('tendencyText').textContent = tendency;
+
+  // Update direction badge (based on face benchmark if available)
+  const saved = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  const dir = saved.faceMainDirection || 'unclear';
+  const badge = document.getElementById('directionBadge');
+  badge.textContent = dir === 'left' ? '偏左' : dir === 'right' ? '偏右' : '— 未评估';
+  badge.className = 'direction-badge ' + (dir === 'left' ? 'dir-left' : dir === 'right' ? 'dir-right' : 'dir-unclear');
+}
+
+function triggerAutoSave() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveData(true);
+    document.getElementById('saveBadge').classList.add('show');
+    setTimeout(() => document.getElementById('saveBadge').classList.remove('show'), 2000);
+  }, 1500);
+}
+
+function saveData(silent = false) {
+  let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  assessment.overviewAnswers = answers;
+  let pseudo = 0, trueS = 0;
+  QUESTIONS.forEach(q => {
+    if (answers[q.id] !== undefined) {
+      pseudo += q.options[answers[q.id]].pseudo;
+      trueS += q.options[answers[q.id]].true;
+    }
+  });
+  assessment.overviewPseudoScore = pseudo;
+  assessment.overviewTrueScore = trueS;
+  assessment.updatedAt = new Date().toISOString();
+  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+  if (!silent) alert('✅ 总览预判已保存');
+}
+
+function goNext() {
+  saveData(true);
+  const params = new URLSearchParams(window.location.search);
+  window.location.href = 'face-benchmark.html' + (params.get('client') ? '?client=' + params.get('client') : '');
+}
+
+// Init
+const saved = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+if (saved.overviewAnswers) answers = saved.overviewAnswers;
+renderQuestions();
+updateScores();
+</script>
+</body>
+</html>

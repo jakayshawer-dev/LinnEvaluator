@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>综合结果 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0; --purple-bg: #F3E5F5;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --info: #1976D2; --border: #E0E0E0; --warning: #F57C00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    .topbar {
+      background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
+      color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar .title { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+    .topbar .actions { display: flex; gap: 10px; }
+    .btn-print {
+      padding: 6px 14px; border: 1.5px solid white; border-radius: 20px;
+      background: transparent; color: white; font-size: 12px; cursor: pointer;
+    }
+    .btn-print:hover { background: white; color: var(--green-primary); }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 30px; }
+
+    /* Result Hero */
+    .result-hero {
+      border-radius: 16px; padding: 24px 20px; text-align: center; margin-bottom: 16px;
+      color: white;
+    }
+    .hero-pseudo { background: linear-gradient(135deg, var(--info), #42A5F5); }
+    .hero-true { background: linear-gradient(135deg, var(--purple-primary), var(--purple-light)); }
+    .hero-mixed { background: linear-gradient(135deg, var(--warning), #FF8F00); }
+    .result-type-badge {
+      display: inline-block; padding: 4px 16px; border-radius: 20px;
+      background: rgba(255,255,255,0.25); font-size: 13px; font-weight: 700;
+      margin-bottom: 12px; letter-spacing: 2px;
+    }
+    .hero-score-row {
+      display: flex; justify-content: space-around; margin: 20px 0;
+    }
+    .hero-score-item .num { font-size: 40px; font-weight: 900; line-height: 1; }
+    .hero-score-item .label { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+    .percent-bar {
+      background: rgba(255,255,255,0.25); border-radius: 10px; height: 12px; overflow: hidden; margin-top: 16px;
+    }
+    .percent-bar-fill {
+      height: 100%; background: white; border-radius: 10px;
+      transition: width 1s ease;
+    }
+    .hero-legend {
+      display: flex; justify-content: space-between; font-size: 11px; margin-top: 6px; opacity: 0.9;
+    }
+
+    /* Cards */
+    .section-title {
+      font-size: 15px; font-weight: 700; color: var(--green-primary);
+      margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--green-bg);
+    }
+    .result-card {
+      background: var(--card); border-radius: 12px; padding: 16px;
+      margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+    }
+    .card-title { font-size: 15px; font-weight: 700; }
+    .card-badge {
+      padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;
+    }
+    .badge-main { background: var(--green-bg); color: var(--green-primary); }
+    .badge-sub { background: #FFF3E0; color: var(--warning); }
+    .badge-bg { background: #EEE; color: var(--text-secondary); }
+
+    /* Score bars */
+    .score-bar-row { margin-bottom: 8px; }
+    .score-bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .score-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 4px; }
+    .fill-green { background: var(--green-primary); }
+    .fill-purple { background: var(--purple-primary); }
+
+    /* Factor list */
+    .factor-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px; border-radius: 8px; margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .factor-item.main { background: var(--green-bg); border-left: 3px solid var(--green-primary); }
+    .factor-item.sub { background: #FFF3E0; border-left: 3px solid var(--warning); }
+    .factor-item.bg { background: #F5F5F5; border-left: 3px solid var(--text-secondary); }
+    .factor-name { font-weight: 600; }
+    .factor-score { font-weight: 700; color: var(--text-secondary); }
+
+    /* Recommendations */
+    .rec-card {
+      background: var(--card); border-radius: 12px; padding: 14px;
+      margin-bottom: 10px; border-left: 4px solid;
+    }
+    .rec-card.pseudo { border-color: var(--info); }
+    .rec-card.true { border-color: var(--purple-primary); }
+    .rec-card .rec-type {
+      font-size: 11px; font-weight: 700; margin-bottom: 6px;
+    }
+    .rec-card .rec-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .rec-card .rec-content { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* Assessment info footer */
+    .info-footer {
+      background: var(--card); border-radius: 12px; padding: 14px;
+      margin-top: 20px; font-size: 12px; color: var(--text-secondary); line-height: 1.8;
+    }
+    .info-footer .row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 4px 0; }
+    .info-footer .row:last-child { border-bottom: none; }
+
+    /* Action buttons */
+    .action-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      padding: 12px 16px; display: flex; gap: 10px; box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      max-width: 600px; margin: 0 auto; z-index: 100;
+    }
+    .btn { flex: 1; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-secondary { background: #EEE; color: var(--text-secondary); }
+    .btn-primary { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; }
+    .btn-purple { background: linear-gradient(135deg, var(--purple-primary), var(--purple-light)); color: white; }
+    .btn-finish { background: linear-gradient(135deg, #1B5E20, #2E7D32); color: white; }
+
+    @media print {
+      .action-bar, .topbar .actions { display: none !important; }
+      body { background: white; }
+      .container { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title">📊 综合评估结果</div>
+  <div class="actions">
+    <button class="btn-print" onclick="window.print()">🖨️ 打印报告</button>
+  </div>
+</div>
+
+<div class="container" id="reportContent">
+
+  <!-- Hero Section (filled by JS) -->
+  <div id="resultHero"></div>
+
+  <!-- Comparison Bar -->
+  <div class="result-card" id="comparisonCard">
+    <div class="card-header">
+      <div class="card-title">假性 vs 真性 得分对比</div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-label">
+        <span>假性因素</span><span id="pseudoBarLabel">0分</span>
+      </div>
+      <div class="score-bar"><div class="score-bar-fill fill-green" id="pseudoBar" style="width:0%"></div></div>
+    </div>
+    <div class="score-bar-row">
+      <class="score-bar-label">
+        <span>真性因素</span><span id="trueBarLabel">0分</span>
+      </class>
+    </div>
+    <div class="score-bar"><div class="score-bar-fill fill-purple" id="trueBar" style="width:0%"></div></div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:6px;text-align:right;">
+      主导阈值：≥3分差距 | 混合型：差值&lt;3分
+    </div>
+  </div>
+
+  <!-- Pseudo Factors -->
+  <div class="section-title">🔍 假性因素分析</div>
+  <div id="pseudoFactors"></div>
+
+  <!-- True Factors -->
+  <div class="section-title">🦴 真性因素分析</div>
+  <div id="trueFactors"></div>
+
+  <!-- Recommendations -->
+  <div class="section-title">💡 改善建议</div>
+  <div id="recommendations"></div>
+
+  <!-- Assessment Info Footer -->
+  <div class="info-footer" id="infoFooter"></div>
+
+</div>
+
+<div class="action-bar">
+  <button class="btn btn-secondary" onclick="window.location.href='clients.html'">← 客户列表</button>
+  <button class="btn btn-finish" onclick="finishAssessment()">✅ 完成评估</button>
+</div>
+
+<script>
+// Pseudo items
+const PSEUDO_ITEMS = [
+  { id: 'pelvis_tilt', name: '骨盆侧倾' },
+  { id: 'pelvis_anteversion', name: '骨盆前倾' },
+  { id: 'thoracic_scoliosis', name: '胸椎侧弯' },
+  { id: 'chest_collapse', name: '胸腔塌陷' },
+  { id: 'neck_curvature', name: '颈部侧弯' },
+  { id: 'neck_rotation', name: '颈部旋转' },
+  { id: 'ocular_neck_reflex', name: '眶-颈反射' },
+  { id: 'chewing_lateral', name: '咀嚼偏侧' },
+  { id: 'tmj_wisdom', name: '智齿 / TMJ' },
+  { id: 'cervical_proprioception', name: '颈椎本体感损伤' }
+];
+
+const TRUE_TYPES = [
+  { id: 'muscle', name: '肌肉型' },
+  { id: 'fascial', name: '筋膜型' },
+  { id: 'compensatory', name: '代偿型' },
+  { id: 'bone', name: '骨性型' },
+  { id: 'nerve', name: '神经型' }
+];
+
+// Recommendations library
+// 获取指定真性类型的方向
+function getTrueDirection(typeId) {
+  const d = (window.assessmentData?.trueAssessment || {})[typeId];
+  return d?.direction || null;
+}
+
+// 操作者指引渲染（operator = 操作者负责执行）
+function op(label, content) {
+  return `<div style="background:#E8F5E9;border-left:3px solid #2E7D32;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:6px;"><span style="font-size:11px;color:#2E7D32;font-weight:700;">🖐️ 操作者执行：</span><br><span style="font-size:13px;color:#212121;">${content}</span></div>`;
+}
+// 客户自主指引
+function self(label, content) {
+  return `<div style="background:#FFF3E0;border-left:3px solid #F57C00;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:6px;"><span style="font-size:11px;color:#F57C00;font-weight:700;">🏠 客户自主：</span><br><span style="font-size:13px;color:#5D4037;">${content}</span></div>`;
+}
+// 专业转诊指引
+function refer(content) {
+  return `<div style="background:#F3E5F5;border-left:3px solid #7B1FA2;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:6px;"><span style="font-size:11px;color:#7B1FA2;font-weight:700;">🏥 专业转诊：</span><br><span style="font-size:13px;color:#4A148C;">${content}</span></div>`;
+}
+
+const RECOMMENDATIONS_LIB = {
+  pseudo: {
+    '骨盆侧倾': {
+      title: '骨盆侧倾处理方案',
+      operator: (dir) => `骨盆侧倾矫正手法，着重操作${dir === 'left' ? '右侧（骶髂关节向下复位）' : dir === 'right' ? '左侧（骶髂关节向下复位）' : '双侧（需综合评估后确定重点侧）'}髋骨向上偏移侧`,
+      self: (dir) => `日常：坐姿避免单侧臀部承重；睡姿建议患侧朝上侧卧；进行臀中肌激活训练（侧卧蚌式开合）`
+    },
+    '骨盆前倾': {
+      title: '骨盆前倾处理方案',
+      operator: () => `骨盆前倾矫正手法（腹横肌激活 + 髂腰肌离心拉伸 + 臀大肌离心训练）`,
+      self: () => `日常：避免长时间久坐（每40分钟起身活动）；睡姿避免跪姿或过度蜷缩；自主进行臀桥训练（每日2组×12次）`
+    },
+    '胸椎侧弯': {
+      title: '胸椎侧弯处理方案',
+      operator: (dir) => `胸椎侧弯矫正手法（Schroth或Mulligan），着重操作凹侧（${dir === 'left' ? '左侧' : '右侧'}肋骨隆起处）`,
+      self: (dir) => `日常：坐姿向凸侧（${dir === 'left' ? '右' : '左'}侧）轻微侧倾矫正坐姿；禁忌长期单肩背包；进行施罗斯体操每日10分钟`
+    },
+    '胸腔塌陷': {
+      title: '胸腔塌陷处理方案',
+      operator: () => `胸腔塌陷矫正手法（前锯肌/胸小肌松解 + 肋间肌筋膜释放 + 胸廓扩张训练）`,
+      self: () => `日常：刻意练习腹式呼吸（吸气时胸廓向两侧撑开）；避免含胸伏案；每天靠墙"大字撑"训练5分钟`
+    },
+    '颈部侧弯': {
+      title: '颈部侧弯处理方案',
+      operator: (dir) => `颈部侧弯矫正手法，着重操作短缩侧（${dir === 'left' ? '左侧' : '右侧'}斜角肌、肩胛提肌）`,
+      self: (dir) => `日常：睡姿头部向凸侧（${dir === 'left' ? '右' : '左'}侧）轻度侧倾位；避免长时间低头；进行颈部浅层肌群自我拉伸（每次维持30秒×3组）`
+    },
+    '颈部旋转': {
+      title: '颈部旋转处理方案',
+      operator: () => `颈部旋转矫正手法（胸锁乳突肌/斜角肌松解 + 颈椎椎间关节松动）`,
+      self: () => `日常：避免长时间保持单一头位；进行颈部旋转活动度自我训练（缓慢至末端维持3秒，10次/组）`
+    },
+    '眶-颈反射': {
+      title: '眶-颈反射异常处理方案',
+      operator: () => `① 眼周肌肉（眼轮匝肌、皱眉肌）起止点松解<br>② 颈后肌群（头半棘肌、枕下肌群）按压放松<br>③ 睫状肌、星状神经节刺激（轻柔按压C6横突前侧）`,
+      self: () => `日常：每用眼40分钟进行远近交替视物训练（远处物体盯住10秒→近处手指10厘米处10秒，循环10次）；避免长时间盯屏`
+    },
+    '咀嚼偏侧': {
+      title: '咀嚼偏侧处理方案',
+      operator: (dir) => `① ${dir === 'left' ? '右侧' : '左侧'}咬肌masseter、颞肌temporalis起止点按压松解<br>② 翼内肌、翼外肌松解（口内按压技巧）<br>③ 舌骨上肌群、下颌舌骨肌放松`,
+      self: (dir) => `日常：强制使用弱侧（${dir === 'left' ? '左侧' : '右侧'}）咀嚼，逐渐建立双侧均衡咀嚼习惯；避免偏侧牙列承重咀嚼`
+    },
+    '智齿 / TMJ': {
+      title: 'TMJ/智齿问题处理方案',
+      operator: () => `① 颞颌关节囊周围肌群松解（咬肌、颞肌、翼外肌）<br>② 关节松动：下颌骨向下前方滑动手法<br>③ 开口度评估：若持续受限转诊`,
+      self: () => null,
+      refer: '建议转诊至口腔科或颞颌关节专科进行影像学评估（CBCT/曲面断层片）；若确认关节结构异常，遵循专科医生指导，保守治疗期间避免硬食'
+    },
+    '颈椎本体感损伤': {
+      title: '颈椎本体感损伤处理方案',
+      operator: () => `① C1-C3椎体关节囊周围本体感受器丰富的区域进行关节松动<br>② 枕下肌群（头后大直肌、头下斜肌）按压激活<br>③ 颈部位置觉训练：操作者辅助下进行盲视头部位置移动（闭眼抗阻）`,
+      self: () => `日常：进行颈部本体感觉训练（睁眼找到中立位→闭眼保持位置10秒→重复10次）；前庭功能训练（转头时注视固定物体）`
+    }
+  },
+  true: {
+    '肌肉型': {
+      title: '肌肉型针对性处理方案',
+      operator: (side) => {
+        const s = side === 'left' ? '左侧' : side === 'right' ? '右侧' : '双侧';
+        return `① ${s}咬肌（masseter）深层纤维按压松解（起于颧弓，止于下颌支外侧面）<br>② ${s}颞肌（temporalis）起止点按压（起于颞窝，止于下颌骨冠突）<br>③ ${s}翼内肌（medial pterygoid）、翼外肌（lateral pterygoid）松解（口内手指按压技巧）<br>④ 表情肌：${s}提上唇肌、颧大肌、笑肌等面部表情肌群筋膜释放`
+      },
+      self: () => null
+    },
+    '筋膜型': {
+      title: '筋膜型针对性处理方案',
+      operator: (side) => {
+        const s = side === 'left' ? '左侧' : side === 'right' ? '右侧' : '双侧';
+        return `① ${s}浅层筋膜：SMAS层（表浅肌肉腱膜系统）面部提升方向推动释放<br>② ${s}咀嚼肌筋膜松解（咬肌、颞肌覆盖的深筋膜）<br>③ ${s}颧弓下方翼状韧带（zygomatic ligament）松解<br>④ 颈部至面部的筋膜链（从颈阔肌向上至SMAS）整体松解`
+      },
+      self: () => null
+    },
+    '代偿型': {
+      title: '代偿型根源排查与处理方案',
+      operator: () => `① 首先排查咬合偏侧：检测上下牙列中线是否对齐<br>② 单侧咀嚼习惯者：弱侧咀嚼肌群激活训练<br>③ 视力不平衡：建议进行专业视力筛查（屈光参差、隐斜视）<br>④ 继发性面部代偿：处理根源后针对面部双侧肌张力的不平衡进行手法放松`,
+      self: () => null,
+      refer: '咬合问题严重者建议转诊口腔正畸或修复科；视力问题转诊眼科或视光专科'
+    },
+    '骨性型': {
+      title: '骨性型评估与处理方案',
+      operator: () => `① 骨骼不对称程度触诊记录（颧骨、下颌角、下颌体）<br>② 骨性偏斜是否固定（多次评估间一致性判断）<br>③ 骨性型通常为不可逆结构差，手法治疗以改善相邻软组织张力为主`,
+      self: () => null,
+      refer: '骨性型建议转诊至颌面外科或正颌外科进行影像学评估（头颅正侧位X片或CT），了解骨骼结构差异程度，由外科判断是否需要手术干预'
+    },
+    '神经型': {
+      title: '神经型针对性处理方案',
+      operator: (side) => {
+        const s = side === 'left' ? '左侧' : side === 'right' ? '右侧' : '双侧';
+        return `① ${s}面神经（CN VII）走向：耳垂下→腮腺→面颊，神经穿出孔位按压松解<br>② ${s}额支、颧支、颊支、下颌缘支、颈支各分支出口点松解<br>③ 表情肌神经肌肉促进（PNF）技术：操作者给予肌肉低频电刺激（若无禁忌）<br>④ ${s}眼轮匝肌、口轮匝肌皱眉肌群神经松动`
+      },
+      self: () => null,
+      refer: '面神经功能明显障碍者（如闭眼不全、口角歪斜）建议转诊神经内科进行面神经电图（ENoG）或肌电图（EMG）检查'
+    }
+  }
+};
+
+function calcPseudo(itemId) {
+  const d = (window.assessmentData?.pseudoAssessment || {})[itemId] || {};
+  if (!d.C) return 0;
+  if (d.C === 'no') return 0;
+  if (d.C === 'yes') {
+    // 获取面部主偏斜方向判断D是否一致
+    const assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+    const faceDir = assessment.faceMainDirection || 'unclear';
+    const dConsistent = (d.D === faceDir) || (d.D === 'none');
+    if (dConsistent) return 1 + (d.E || 0);
+    else return (d.E || 0) * 0.5;
+  }
+  return 0;
+}
+
+function calcTrue(typeId) {
+  const d = (window.assessmentData?.trueAssessment || {})[typeId] || {};
+  if (!d.subs) return 0;
+  const yesCount = d.subs.filter(s => s === true).length;
+  if (yesCount >= 3) return 3;
+  if (yesCount === 2) return 2;
+  if (yesCount === 1) return 1;
+  return 0;
+}
+
+function getResultType(pseudoScore, trueScore) {
+  const diff = Math.abs(pseudoScore - trueScore);
+  if (diff < 3 && pseudoScore > 0 && trueScore > 0) return 'mixed';
+  if (pseudoScore >= trueScore + 3) return 'pseudo';
+  if (trueScore >= pseudoScore + 3) return 'true';
+  return 'mixed';
+}
+
+function getFactorRank(items, calcFn) {
+  return items
+    .map(item => ({ id: item.id, name: item.name, score: calcFn(item.id) }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+}
+
+function render() {
+  const data = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  window.assessmentData = data;
+
+  const pseudoScore = data.pseudoScore || 0;
+  const trueScore = data.trueScore || 0;
+  const basicInfo = data.basicInfo || {};
+  const faceDir = data.faceMainDirection || 'unclear';
+
+  const resultType = getResultType(pseudoScore, trueScore);
+  const total = pseudoScore + trueScore;
+  const pseudoPct = total > 0 ? (pseudoScore / total * 100).toFixed(0) : 50;
+  const truePct = total > 0 ? (trueScore / total * 100).toFixed(0) : 50;
+
+  const TYPE_CONFIG = {
+    pseudo: { hero: 'hero-pseudo', label: '假性主导型', sub: '体态/习惯因素是主要问题根源' },
+    true: { hero: 'hero-true', label: '真性主导型', sub: '结构性问题是主要问题根源' },
+    mixed: { hero: 'hero-mixed', label: '真假混合型', sub: '假性与真性因素共同作用' }
+  };
+  const cfg = TYPE_CONFIG[resultType];
+
+  // Hero
+  document.getElementById('resultHero').innerHTML = `
+    <div class="result-hero ${cfg.hero}">
+      <div class="result-type-badge">${cfg.label}</div>
+      <div style="font-size:13px;opacity:0.85;margin-bottom:8px;">${cfg.sub}</div>
+      <div class="hero-score-row">
+        <div class="hero-score-item">
+          <div class="num" style="color:${resultType==='pseudo'?'white':'rgba(255,255,255,0.6)'}">${pseudoScore.toFixed(1)}</div>
+          <div class="label">假性得分</div>
+        </div>
+        <div class="hero-score-item">
+          <div class="num" style="font-size:28px;opacity:0.5">VS</div>
+        </div>
+        <div class="hero-score-item">
+          <div class="num" style="color:${resultType==='true'?'white':'rgba(255,255,255,0.6)'}">${trueScore}</div>
+          <div class="label">真性得分</div>
+        </div>
+      </div>
+      <div class="percent-bar">
+        <div class="percent-bar-fill" style="width:${pseudoPct}%"></div>
+      </div>
+      <div class="hero-legend">
+        <span>假性 ${pseudoPct}%</span>
+        <span>真性 ${truePct}%</span>
+      </div>
+    </div>`;
+
+  // Score bars
+  const maxScore = Math.max(pseudoScore, trueScore, 1);
+  document.getElementById('pseudoBarLabel').textContent = pseudoScore.toFixed(1) + '分';
+  document.getElementById('trueBarLabel').textContent = trueScore + '分';
+  document.getElementById('pseudoBar').style.width = (pseudoScore / maxScore * 100) + '%';
+  document.getElementById('trueBar').style.width = (trueScore / maxScore * 100) + '%';
+
+  // Pseudo factors
+  const pseudoRank = getFactorRank(PSEUDO_ITEMS, calcPseudo);
+  const pseudoMain = pseudoRank.slice(0, 2).map(x => x.name);
+  const container = document.getElementById('pseudoFactors');
+  if (pseudoRank.length === 0) {
+    container.innerHTML = '<div class="result-card"><div style="font-size:13px;color:var(--text-secondary);text-align:center;padding:16px;">暂无异常假性因素</div></div>';
+  } else {
+    container.innerHTML = pseudoRank.map((x, i) => {
+      const isMain = i === 0;
+      const isSub = i === 1;
+      const badgeClass = isMain ? 'badge-main' : isSub ? 'badge-sub' : 'badge-bg';
+      const badgeText = isMain ? '主因' : isSub ? '辅因' : '背景';
+      const itemClass = isMain ? 'main' : isSub ? 'sub' : 'bg';
+      return `
+      <div class="factor-item ${itemClass}">
+        <div>
+          <div class="factor-name">${x.name}</div>
+          <div style="font-size:11px;color:var(--text-secondary);">${isMain ? '主要影响' : isSub ? '次要影响' : '一般影响'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="factor-score">${x.score.toFixed(1)}分</div>
+          <span class="card-badge ${badgeClass}">${badgeText}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // True factors
+  const trueRank = getFactorRank(TRUE_TYPES, calcTrue);
+  const container2 = document.getElementById('trueFactors');
+  if (trueRank.length === 0) {
+    container2.innerHTML = '<div class="result-card"><div style="font-size:13px;color:var(--text-secondary);text-align:center;padding:16px;">暂无活跃真性因素</div></div>';
+  } else {
+    container2.innerHTML = trueRank.map((x, i) => {
+      const isMain = i === 0;
+      const isSub = i === 1;
+      const badgeClass = isMain ? 'badge-main' : isSub ? 'badge-sub' : 'badge-bg';
+      const badgeText = isMain ? '主因' : isSub ? '辅因' : '背景';
+      const itemClass = isMain ? 'main' : isSub ? 'sub' : 'bg';
+      return `
+      <div class="factor-item ${itemClass}">
+        <div>
+          <div class="factor-name">${x.name}</div>
+          <div style="font-size:11px;color:var(--text-secondary);">${isMain ? '主导矛盾' : isSub ? '次要矛盾' : '一般参与'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="factor-score">${x.score}分</div>
+          <span class="card-badge ${badgeClass}">${badgeText}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recommendations
+  const recContainer = document.getElementById('recommendations');
+  let recs = [];
+
+  // Pseudo recommendations (top 3)
+  pseudoRank.slice(0, 3).forEach(x => {
+    const lib = RECOMMENDATIONS_LIB.pseudo[x.name];
+    if (!lib) return;
+    // 获取该项偏斜方向
+    const pData = (data.pseudoAssessment || {})[x.id] || {};
+    const pDir = pData.D || null;
+    const badge = x === pseudoRank[0] ? '【主因】必须处理' : x === pseudoRank[1] ? '【辅因】重点辅助' : '【背景】可辅助处理';
+    const priorityColor = x === pseudoRank[0] ? '#D32F2F' : x === pseudoRank[1] ? '#F57C00' : '#757575';
+    recs.push({
+      type: 'pseudo',
+      name: x.name,
+      title: lib.title,
+      score: x.score.toFixed(1),
+      badge,
+      priorityColor,
+      operator: typeof lib.operator === 'function' ? lib.operator(pDir) : lib.operator,
+      self: typeof lib.self === 'function' ? lib.self(pDir) : lib.self,
+      refer: lib.refer || null
+    });
+  });
+
+  // True recommendations (top 3)
+  trueRank.slice(0, 3).forEach(x => {
+    const lib = RECOMMENDATIONS_LIB.true[x.name];
+    if (!lib) return;
+    const tDir = getTrueDirection(x.id);
+    const badge = x === trueRank[0] ? '【主因】必须处理' : x === trueRank[1] ? '【辅因】重点辅助' : '【背景】可辅助处理';
+    const priorityColor = x === trueRank[0] ? '#D32F2F' : x === trueRank[1] ? '#F57C00' : '#757575';
+    recs.push({
+      type: 'true',
+      name: x.name,
+      title: lib.title,
+      score: x.score,
+      badge,
+      priorityColor,
+      operator: typeof lib.operator === 'function' ? lib.operator(tDir) : lib.operator,
+      self: typeof lib.self === 'function' ? lib.self(tDir) : lib.self,
+      refer: lib.refer || null
+    });
+  });
+
+  if (recs.length === 0) {
+    recContainer.innerHTML = '<div class="result-card"><div style="font-size:13px;color:var(--text-secondary);text-align:center;padding:16px;">建议在评估完成后生成</div></div>';
+  } else {
+    recContainer.innerHTML = recs.map(r => `
+      <div class="rec-card ${r.type}" style="border-top-width:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:14px;font-weight:700;">${r.name}</div>
+          <div style="font-size:11px;font-weight:700;color:white;background:${r.priorityColor};padding:2px 8px;border-radius:10px;">${r.badge}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">${r.title} · ${r.score}分</div>
+        ${r.operator ? op('', r.operator) : ''}
+        ${r.self ? self('', r.self) : ''}
+        ${r.refer ? refer(r.refer) : ''}
+      </div>`).join('');
+  }
+
+  // Footer info
+  document.getElementById('infoFooter').innerHTML = `
+    <div class="row"><span>客户姓名</span><span>${basicInfo.clientName || '—'}</span></div>
+    <div class="row"><span>评估日期</span><span>${basicInfo.assessmentDate || new Date().toLocaleDateString('zh-CN')}</span></div>
+    <div class="row"><span>评估师</span><span>${basicInfo.assessorName || localStorage.getItem('linn_assessor_name') || '—'}</span></div>
+    <div class="row"><span>面部偏斜方向</span><span>${faceDir === 'left' ? '偏左' : faceDir === 'right' ? '偏右' : '不明确'}</span></div>
+    <div class="row"><span>评估工具</span><span>LINN 面部歪斜评估系统 v1.0</span></div>
+    <div class="row" style="color:var(--purple-primary);font-weight:600;"><span>WeChat: LinnChang2017</span><span>ins: Linn_Aesthetic</span></div>
+  `;
+}
+
+async function finishAssessment() {
+  if (!confirm('确认完成评估？评估数据将保存至 Airtable。')) return;
+
+  let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  const pseudoScore = assessment.pseudoScore || 0;
+  const trueScore = assessment.trueScore || 0;
+  const diff = Math.abs(pseudoScore - trueScore);
+  let resultType = '真假混合型';
+  if (diff >= 3 && pseudoScore > trueScore) resultType = '假性主导型';
+  else if (diff >= 3 && trueScore > pseudoScore) resultType = '真性主导型';
+
+  const API_KEY = localStorage.getItem('linn_airtable_key') || '';
+  const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
+
+  if (API_KEY && BASE_ID) {
+    const fields = {
+      Assessor: assessment.basicInfo?.assessorName || localStorage.getItem('linn_assessor_name'),
+      Client: assessment.clientId && !assessment.clientId.startsWith('demo') ? [assessment.clientId] : [],
+      Status: '已完成',
+      BasicInfo: JSON.stringify(assessment.basicInfo || {}),
+      FaceBenchmark: JSON.stringify(assessment.faceBenchmark || {}),
+      FaceMainDirection: assessment.faceMainDirection || 'unclear',
+      PseudoAssessment: JSON.stringify(assessment.pseudoAssessment || {}),
+      TrueAssessment: JSON.stringify(assessment.trueAssessment || {}),
+      PseudoScore: pseudoScore,
+      TrueScore: trueScore,
+      ResultType: resultType,
+      PseudoPercent: pseudoScore + trueScore > 0 ? Math.round(pseudoScore / (pseudoScore + trueScore) * 100) : 50,
+      CreatedAt: (assessment.basicInfo?.assessmentDate || new Date().toISOString().split('T')[0])
+    };
+    try {
+      if (assessment.airtableId) {
+        await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments/${assessment.airtableId}`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields })
+        });
+      } else {
+        const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessments`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields })
+        });
+        const data = await res.json();
+        if (data.id) {
+          assessment.airtableId = data.id;
+        }
+      }
+      assessment.status = '已完成';
+      localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+      alert('✅ 评估已完成并保存！');
+      window.location.href = 'clients.html';
+    } catch (e) {
+      alert('保存失败：' + e.message);
+    }
+  } else {
+    assessment.status = '已完成';
+    localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+    alert('✅ 评估已完成（演示模式，数据仅保存在本地）');
+    window.location.href = 'clients.html';
+  }
+}
+
+render();
+</script>
+</body>
+</html>

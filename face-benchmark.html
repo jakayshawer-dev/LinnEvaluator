@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>面部偏斜基准 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --info: #1976D2; --border: #E0E0E0; --warning: #F57C00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    .progress-bar {
+      background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
+      color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .progress-bar .step { font-size: 13px; opacity: 0.8; }
+    .progress-bar .title { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+    .progress-dots { display: flex; gap: 6px; align-items: center; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+    .dot.active { background: white; width: 20px; border-radius: 4px; }
+    .dot.done { background: #A5D6A7; }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }
+    .info-banner {
+      background: linear-gradient(135deg, var(--green-bg), #F3E5F5);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+      font-size: 13px; line-height: 1.7; color: var(--text);
+      border-left: 4px solid var(--green-primary);
+    }
+    .section-title {
+      font-size: 15px; font-weight: 700; color: var(--green-primary);
+      margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--green-bg);
+    }
+    .item-card {
+      background: var(--card); border-radius: 12px; padding: 16px;
+      margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .item-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .item-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .item-direction-badge {
+      padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;
+    }
+    .badge-left { background: #E3F2FD; color: var(--info); }
+    .badge-right { background: #FFEBEE; color: var(--danger); }
+    .badge-none { background: #EEE; color: var(--text-secondary); }
+    .direction-picker {
+      display: flex; gap: 8px;
+    }
+    .dir-btn {
+      flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px;
+      text-align: center; font-size: 13px; cursor: pointer; transition: all 0.2s;
+      background: white; color: var(--text-secondary); font-weight: 600;
+    }
+    .dir-btn:hover { border-color: var(--green-primary); }
+    .dir-btn.selected-left { border-color: var(--info); background: #E3F2FD; color: var(--info); }
+    .dir-btn.selected-right { border-color: var(--danger); background: #FFEBEE; color: var(--danger); }
+    .dir-btn.selected-none { border-color: #9E9E9E; background: #EEE; color: #757575; }
+    .result-card {
+      background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+      color: white; border-radius: 14px; padding: 20px; margin: 20px 0;
+      text-align: center;
+    }
+    .result-card .label { font-size: 13px; opacity: 0.85; margin-bottom: 6px; }
+    .result-card .direction-text { font-size: 28px; font-weight: 800; letter-spacing: 2px; }
+    .result-card .sub { font-size: 12px; opacity: 0.8; margin-top: 8px; }
+    .tip-box {
+      background: #FFF8E1; border-left: 4px solid var(--warning);
+      border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 12px;
+      color: var(--text); margin-top: 12px; line-height: 1.6;
+    }
+    .auto-save-badge {
+      position: fixed; top: 70px; right: 16px; background: var(--green-bg); color: var(--green-primary);
+      padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s; z-index: 99;
+    }
+    .auto-save-badge.show { opacity: 1; }
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      padding: 12px 16px; display: flex; gap: 10px; box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      max-width: 600px; margin: 0 auto; z-index: 100;
+    }
+    .btn { flex: 1; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-prev { background: #EEE; color: var(--text-secondary); }
+    .btn-next { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; }
+    .btn-save { background: var(--purple-primary); color: white; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar">
+  <div class="step">步骤 3/5</div>
+  <div class="progress-dots">
+    <div class="dot done">✓</div><div class="dot done">✓</div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="title">面部偏斜基准</div>
+</div>
+
+<div class="auto-save-badge" id="saveBadge">✓ 已自动保存</div>
+
+<div class="container">
+
+  <div class="info-banner">
+    💡 <strong>目的：</strong>综合以下5项指标，判断面部的整体主偏斜方向。<br>
+    该方向将作为后续假性评估中 D字段（是否与面部偏斜一致）的判断依据。
+  </div>
+
+  <!-- 5 Benchmark Items -->
+  <div id="benchmarkItems"></div>
+
+  <!-- 综合方向结果 -->
+  <div class="result-card">
+    <div class="label">综合判断：面部主偏斜方向</div>
+    <div class="direction-text" id="mainDirectionText">—</div>
+    <div class="sub" id="mainDirectionSub">请完成以上所有评估项</div>
+  </div>
+
+</div>
+
+<div class="bottom-bar">
+  <button class="btn btn-prev" onclick="window.location.href='overview.html'">← 上一步</button>
+  <button class="btn btn-save" onclick="saveData(true)">💾 保存</button>
+  <button class="btn btn-next" onclick="goNext()">下一步 →</button>
+</div>
+
+<script>
+const BENCHMARK_ITEMS = [
+  { key: 'face_size_diff', name: '脸大小差', options: [
+    { label: '左侧偏大', value: 'left' },
+    { label: '右侧偏大', value: 'right' },
+    { label: '无差异', value: 'none' }
+  ]},
+  { key: 'nasolabial_diff', name: '法令纹深浅', options: [
+    { label: '左侧更深', value: 'left' },
+    { label: '右侧更深', value: 'right' },
+    { label: '无差异', value: 'none' }
+  ]},
+  { key: 'chin_shift', name: '下巴偏移方向', options: [
+    { label: '偏左', value: 'left' },
+    { label: '偏右', value: 'right' },
+    { label: '居中', value: 'center' }
+  ]},
+  { key: 'zygoma_prominence', name: '颧骨前凸度', options: [
+    { label: '左侧更凸', value: 'left' },
+    { label: '右侧更凸', value: 'right' },
+    { label: '无差异', value: 'none' }
+  ]},
+  { key: 'face_main_direction', name: '面部整体偏斜方向（综合判断）', options: [
+    { label: '偏左', value: 'left' },
+    { label: '偏右', value: 'right' },
+    { label: '不明确', value: 'unclear' }
+  ]}
+];
+
+const DIRECTION_MAP = { left: '偏左', right: '偏右', none: '无差异', center: '居中', unclear: '不明确' };
+const BADGE_CLASS = { left: 'badge-left', right: 'badge-right', none: 'badge-none', center: 'badge-none', unclear: 'badge-none' };
+const DIR_BTN_CLASS = { left: 'selected-left', right: 'selected-right', none: 'selected-none', center: 'selected-none', unclear: 'selected-none' };
+
+let benchmarkData = {};
+let saveTimeout;
+
+function triggerAutoSave() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveData(true);
+    document.getElementById('saveBadge').classList.add('show');
+    setTimeout(() => document.getElementById('saveBadge').classList.remove('show'), 2000);
+  }, 1500);
+}
+
+function renderItems() {
+  const container = document.getElementById('benchmarkItems');
+  const saved = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  const savedBench = saved.faceBenchmark || {};
+
+  container.innerHTML = BENCHMARK_ITEMS.map(item => {
+    const selected = savedBench[item.key] || '';
+    const badgeClass = selected ? (BADGE_CLASS[selected] || 'badge-none') : 'badge-none';
+    const dirText = selected ? DIRECTION_MAP[selected] : '—';
+    return `
+    <div class="item-card">
+      <div class="item-header">
+        <div class="item-name">${item.name}</div>
+        <div class="item-direction-badge ${badgeClass}" id="badge_${item.key}">${dirText}</div>
+      </div>
+      <div class="direction-picker" id="picker_${item.key}">
+        ${item.options.map(opt => `
+          <div class="dir-btn ${selected === opt.value ? 'dir-btn.' + DIR_BTN_CLASS[opt.value] : ''}"
+               data-key="${item.key}" data-value="${opt.value}"
+               onclick="selectDir('${item.key}', '${opt.value}')">${opt.label}</div>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Apply selected classes
+  BENCHMARK_ITEMS.forEach(item => {
+    const selected = savedBench[item.key];
+    if (selected) {
+      const btns = document.querySelectorAll(`[data-key="${item.key}"]`);
+      btns.forEach(b => {
+        if (b.dataset.value === selected) {
+          b.classList.add('selected-' + (selected === 'left' ? 'left' : selected === 'right' ? 'right' : 'none'));
+        }
+      });
+    }
+  });
+
+  updateMainDirection();
+}
+
+function selectDir(key, value) {
+  benchmarkData[key] = value;
+
+  // Update badge
+  const badge = document.getElementById('badge_' + key);
+  badge.textContent = DIRECTION_MAP[value];
+  badge.className = 'item-direction-badge ' + BADGE_CLASS[value];
+
+  // Update buttons
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(b => {
+    b.classList.remove('selected-left', 'selected-right', 'selected-none');
+    if (b.dataset.value === value) {
+      b.classList.add(value === 'left' ? 'selected-left' : value === 'right' ? 'selected-right' : 'selected-none');
+    }
+  });
+
+  updateMainDirection();
+  triggerAutoSave();
+}
+
+function updateMainDirection() {
+  // Determine main direction: if "face_main_direction" is set, use it directly
+  // Otherwise, analyze the other 4 items
+  let mainDir = '';
+  const faceSize = benchmarkData['face_size_diff'];
+  const nasolabial = benchmarkData['nasolabial_diff'];
+  const chin = benchmarkData['chin_shift'];
+  const zygoma = benchmarkData['zygoma_prominence'];
+  const overall = benchmarkData['face_main_direction'];
+
+  if (overall && overall !== 'unclear') {
+    mainDir = overall;
+  } else {
+    // Count left vs right
+    const leftCount = [faceSize, nasolabial, chin, zygoma].filter(v => v === 'left').length;
+    const rightCount = [faceSize, nasolabial, chin, zygoma].filter(v => v === 'right').length;
+    if (leftCount > rightCount) mainDir = 'left';
+    else if (rightCount > leftCount) mainDir = 'right';
+    else mainDir = 'unclear';
+  }
+
+  const textEl = document.getElementById('mainDirectionText');
+  const subEl = document.getElementById('mainDirectionSub');
+  textEl.textContent = mainDir ? DIRECTION_MAP[mainDir] : '—';
+  textEl.style.color = mainDir === 'left' ? '#BBDEFB' : mainDir === 'right' ? '#FFCDD2' : 'rgba(255,255,255,0.6)';
+
+  const setCount = Object.keys(benchmarkData).filter(k => benchmarkData[k]).length;
+  if (setCount < 5) {
+    subEl.textContent = `已完成 ${setCount}/5 项`;
+  } else {
+    subEl.textContent = '✅ 可进入下一步';
+  }
+}
+
+function saveData(silent = false) {
+  let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  assessment.faceBenchmark = benchmarkData;
+  // Also save main direction separately for easy access
+  const faceSize = benchmarkData['face_size_diff'];
+  const nasolabial = benchmarkData['nasolabial_diff'];
+  const chin = benchmarkData['chin_shift'];
+  const zygoma = benchmarkData['zygoma_prominence'];
+  const overall = benchmarkData['face_main_direction'];
+  let mainDir = overall && overall !== 'unclear' ? overall :
+    (['left','right','center','none'].includes(chin) && chin !== 'center' && chin !== 'none') ? chin : 'unclear';
+  if (!overall || overall === 'unclear') {
+    const leftCount = [faceSize, nasolabial, zygoma].filter(v => v === 'left').length;
+    const rightCount = [faceSize, nasolabial, zygoma].filter(v => v === 'right').length;
+    if (leftCount > rightCount) mainDir = 'left';
+    else if (rightCount > leftCount) mainDir = 'right';
+    else mainDir = 'unclear';
+  }
+  assessment.faceMainDirection = mainDir;
+  assessment.updatedAt = new Date().toISOString();
+  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+  if (!silent) alert('✅ 面部偏斜基准已保存');
+}
+
+function goNext() {
+  saveData(true);
+  window.location.href = 'pseudo-assessment.html' + (new URLSearchParams(window.location.search).get('client') ? '?client=' + new URLSearchParams(window.location.search).get('client') : '');
+}
+
+// Load saved data first
+const saved = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+if (saved.faceBenchmark) {
+  benchmarkData = saved.faceBenchmark;
+}
+renderItems();
+</script>
+</body>
+</html>
