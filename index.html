@@ -3,161 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LINN 面部歪斜评估系统 - 专业版</title>
+  <title>登录 - LINN 面部歪斜评估系统</title>
   <style>
     :root {
-      --green-primary: #2E7D32;
-      --green-light: #4CAF50;
-      --green-dark: #1B5E20;
-      --purple-primary: #7B1FA2;
-      --purple-light: #9C27B0;
-      --purple-dark: #4A148C;
-      --bg: #F5F5F5;
-      --card: #FFFFFF;
-      --text: #212121;
-      --text-secondary: #757575;
-      --danger: #D32F2F;
-      --info: #1976D2;
-      --border: #E0E0E0;
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --border: #E0E0E0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      background: var(--bg); color: var(--text); min-height: 100vh;
     }
     .header {
       background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
-      color: white;
-      padding: 24px 20px;
-      text-align: center;
+      color: white; padding: 24px 20px; text-align: center;
     }
-    .header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 2px;
-    }
-    .header p {
-      font-size: 13px;
-      margin-top: 6px;
-      opacity: 0.9;
-    }
+    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+    .header p { font-size: 13px; margin-top: 6px; opacity: 0.9; }
     .logo-area {
-      width: 72px;
-      height: 72px;
-      background: white;
-      border-radius: 50%;
-      margin: 0 auto 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      width: 72px; height: 72px; background: white; border-radius: 50%;
+      margin: 0 auto 16px; display: flex; align-items: center;
+      justify-content: center; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    .container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .login-card {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 36px 28px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-    }
-    .login-card h2 {
-      font-size: 20px;
-      text-align: center;
-      margin-bottom: 24px;
-      color: var(--green-primary);
-    }
-    .form-group {
-      margin-bottom: 18px;
-    }
-    .form-group label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--text);
-    }
+    .container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-card { background: var(--card); border-radius: 16px; padding: 36px 28px; width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+    .login-card h2 { font-size: 20px; text-align: center; margin-bottom: 24px; color: var(--green-primary); }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
     .form-group input {
-      width: 100%;
-      padding: 12px 16px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      font-size: 15px;
-      transition: border-color 0.2s;
-      outline: none;
-      background: #FAFAFA;
+      width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 10px;
+      font-size: 15px; transition: border-color 0.2s; outline: none; background: #FAFAFA;
     }
-    .form-group input:focus {
-      border-color: var(--green-primary);
-      background: white;
-    }
-    .btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 1px;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--green-primary), var(--green-light));
-      color: white;
-    }
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(46,125,50,0.3);
-    }
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-    .btn-secondary {
-      background: white;
-      color: var(--green-primary);
-      border: 2px solid var(--green-primary);
-      margin-top: 10px;
+    .form-group input:focus { border-color: var(--green-primary); background: white; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
+    .btn-primary { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(46,125,50,0.3); }
+    .btn-ghost {
+      width: 100%; padding: 12px; border: 2px solid var(--green-primary); border-radius: 10px;
+      background: transparent; color: var(--green-primary); font-size: 14px; font-weight: 700;
+      cursor: pointer; margin-top: 10px;
     }
     .error-msg {
-      background: #FFEBEE;
-      color: var(--danger);
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin-bottom: 16px;
-      display: none;
-      border-left: 4px solid var(--danger);
+      background: #FFEBEE; color: var(--danger); padding: 10px 14px; border-radius: 8px;
+      font-size: 13px; margin-bottom: 16px; display: none; border-left: 4px solid var(--danger);
     }
-    .contact-info {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.8;
-    }
-    .contact-info a {
-      color: var(--purple-primary);
-      text-decoration: none;
-    }
-    .version-tag {
-      text-align: center;
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 16px;
-      letter-spacing: 1px;
-    }
+    .contact-info { text-align: center; margin-top: 24px; font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+    .contact-info a { color: var(--purple-primary); text-decoration: none; }
+    .version-tag { text-align: center; font-size: 11px; color: var(--text-secondary); margin-top: 16px; letter-spacing: 1px; }
   </style>
 </head>
 <body>
@@ -182,31 +76,37 @@
         <input type="password" id="password" placeholder="请输入密码" required autocomplete="current-password">
       </div>
       <button type="submit" class="btn btn-primary">登 录</button>
-      <button type="button" class="btn btn-secondary" id="guestBtn">演示模式（免登录）</button>
-    <button type="button" class="btn btn-ghost" onclick="window.location.href='register.html'" style="margin-top:8px;width:100%;padding:12px;border:2px solid var(--purple-primary);border-radius:10px;background:transparent;color:var(--purple-primary);font-size:14px;font-weight:700;cursor:pointer;">📝 申请评估师账号</button>
+      <button type="button" class="btn-ghost" id="guestBtn">演示模式（免登录）</button>
+      <button type="button" class="btn-ghost" id="registerBtn">📝 申请评估师账号</button>
     </form>
     <div class="contact-info">
-      学习&amp;合作联系<br>
+      学习&合作联系<br>
       WeChat: <strong>LinnChang2017</strong><br>
       Instagram: <a href="#">Linn_Aesthetic</a>
     </div>
-    <div class="version-tag">LINN EVALUATOR v1.0 PRO</div>
+    <div class="version-tag">LINN 面部歪斜评估系统 v1.0 PRO</div>
   </div>
 </div>
 
 <script>
-const AIRTABLE_API_KEY = localStorage.getItem('linn_airtable_key') || '';
-const AIRTABLE_BASE_ID = localStorage.getItem('linn_airtable_base') || '';
 const SUPABASE_URL = 'https://uyktwvnllouhvovqpnrd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3R3dm5sbG91aHZvdnFwbnJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDAwNzgsImV4cCI6MjA5MDg3NjA3OH0.V6M9zBZekUHvJ7Xz9kge0_cqBbMbX-2MxUl1rWhxt-0';
 
 async function supabaseFetch(table, options = {}) {
   const { method = 'GET', body, filters, select = '*' } = options;
   let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
-  if (filters) { Object.entries(filters).forEach(([k,v]) => { url += `&${k}=eq.${encodeURIComponent(v)}`; }); }
+  if (filters) {
+    Object.entries(filters).forEach(([k, v]) => {
+      url += `&${k}=eq.${encodeURIComponent(v)}`;
+    });
+  }
   const res = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    },
     ...(body ? { body: JSON.stringify(body) } : {})
   });
   if (!res.ok) throw new Error(await res.text());
@@ -218,19 +118,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    showError('请先在演示模式下配置 Airtable API密钥');
-    return;
-  }
-
   try {
     const records = await supabaseFetch('assessors', { filters: { email } });
     if (!records || records.length === 0) {
-      showError('该邮箱未注册');
+      showError('该邮箱未注册，请先申请账号');
       return;
     }
     const assessor = records[0];
-    // Check account status
     if (assessor.status && assessor.status !== '已激活') {
       showError('账号尚未开通，请联系管理员 WeChat: LinnChang2017');
       return;
@@ -240,16 +134,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       showError('密码错误');
       return;
     }
-    // Save session
     localStorage.setItem('linn_assessor', JSON.stringify({
-      id: assessor.id,
-      name: assessor.name,
-      email: assessor.email
+      id: assessor.id, name: assessor.name, email: assessor.email
     }));
     localStorage.setItem('linn_assessor_name', assessor.name);
     window.location.href = 'clients.html';
   } catch (err) {
-    showError('登录失败，请检查网络或API配置');
+    showError('登录失败：' + err.message);
   }
 });
 
@@ -257,6 +148,10 @@ document.getElementById('guestBtn').addEventListener('click', () => {
   localStorage.setItem('linn_assessor_name', '演示评估师');
   localStorage.setItem('linn_guest_mode', 'true');
   window.location.href = 'clients.html';
+});
+
+document.getElementById('registerBtn').addEventListener('click', () => {
+  window.location.href = 'register.html';
 });
 
 async function hashPassword(password) {
