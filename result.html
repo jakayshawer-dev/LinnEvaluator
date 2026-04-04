@@ -618,6 +618,17 @@ async function finishAssessment() {
   }
 }
 
+function saveAndExport() {
+  const assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  const name = assessment.basicInfo?.clientName || '未命名';
+  const date = new Date().toISOString().split('T')[0];
+  const blob = new Blob([JSON.stringify(assessment, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `LinnEvaluator_${name}_${date}.json`; a.click();
+  URL.revokeObjectURL(url);
+}
+
 render();
 </script>
 </body>

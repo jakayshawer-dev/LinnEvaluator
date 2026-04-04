@@ -150,7 +150,7 @@
 
 <div class="bottom-bar">
   <button class="btn btn-prev" onclick="window.location.href='pseudo-assessment.html'">← 上一步</button>
-  <button class="btn btn-save" onclick="saveData(true)">💾 保存</button>
+  <button class="btn btn-save" onclick="saveAndExport()">💾 保存</button>
   <button class="btn btn-next" onclick="goResult()">查看结果 →</button>
 </div>
 
@@ -336,6 +336,18 @@ function saveData(silent = false) {
   assessment.updatedAt = new Date().toISOString();
   localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
   if (!silent) alert('✅ 真性评估已保存');
+}
+
+function saveAndExport() {
+  saveData(true);
+  const assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  const name = assessment.basicInfo?.clientName || '未命名';
+  const date = new Date().toISOString().split('T')[0];
+  const blob = new Blob([JSON.stringify(assessment, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `LinnEvaluator_${name}_${date}.json`; a.click();
+  URL.revokeObjectURL(url);
 }
 
 // Init
