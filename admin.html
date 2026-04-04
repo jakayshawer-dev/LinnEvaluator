@@ -116,14 +116,19 @@ let allRecords = [];
 let currentFilter = 'all';
 
 async function supabaseFetch(table, options = {}) {
-  const { method = 'GET', body, filters, select = '*', order } = options;
-  let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
-  if (filters) {
-    Object.entries(filters).forEach(([k, v]) => {
-      url += `&${k}=eq.${encodeURIComponent(v)}`;
-    });
+  const { method = 'GET', body, filters, select = '*', order, id } = options;
+  let url = `${SUPABASE_URL}/rest/v1/${table}`;
+  if (id) {
+    url += `/${id}`;
+  } else {
+    url += `?select=${select}`;
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => {
+        url += `&${k}=eq.${encodeURIComponent(v)}`;
+      });
+    }
+    if (order) url += `&order=${order.field}.${order.direction || 'asc'}`;
   }
-  if (order) url += `&order=${order.field}.${order.direction || 'asc'}`;
   const res = await fetch(url, {
     method,
     headers: {
@@ -197,7 +202,7 @@ function render() {
 
 async function activate(id) {
   try {
-    await supabaseFetch('assessors', { method: 'PATCH', body: { status: '已激活' }, filters: { id } });
+    await supabaseFetch('assessors', { method: 'PATCH', id, body: { status: '已激活' } });
     toast('✅ 账号已开通！');
     loadData();
   } catch (e) { toast('❌ ' + e.message); }
@@ -205,7 +210,7 @@ async function activate(id) {
 
 async function deactivate(id) {
   try {
-    await supabaseFetch('assessors', { method: 'PATCH', body: { status: '待激活' }, filters: { id } });
+    await supabaseFetch('assessors', { method: 'PATCH', id, body: { status: '待激活' } });
     toast('⏸️ 账号已停用');
     loadData();
   } catch (e) { toast('❌ ' + e.message); }
@@ -214,7 +219,7 @@ async function deactivate(id) {
 async function removeRecord(id) {
   if (!confirm('确定删除该账号记录？')) return;
   try {
-    await supabaseFetch('assessors', { method: 'DELETE', filters: { id } });
+    await supabaseFetch('assessors', { method: 'DELETE', id });
     toast('🗑️ 已删除');
     loadData();
   } catch (e) { toast('❌ ' + e.message); }
