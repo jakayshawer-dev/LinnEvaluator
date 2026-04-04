@@ -118,10 +118,21 @@ let currentFilter = 'all';
 async function supabaseFetch(table, options = {}) {
   const { method = 'GET', body, filters, select = '*', order } = options;
   let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
-  if (filters) { Object.entries(filters).forEach(([k,v]) => { url += `&${k}=eq.${encodeURIComponent(v)}`; }); }
-  if (order) url += `&order(${order.field})=${order.direction || 'asc'}`;
+  if (filters) {
+    Object.entries(filters).forEach(([k, v]) => {
+      url += `&${k}=eq.${encodeURIComponent(v)}`;
+    });
+  }
+  if (order) url += `&order=${order.field}.${order.direction || 'asc'}`;
   const res = await fetch(url, {
-    method, headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, ...(body ? { body: JSON.stringify(body) } : {})
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': method === 'POST' ? 'return=representation' : ''
+    },
+    ...(body ? { body: JSON.stringify(body) } : {})
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
