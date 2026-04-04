@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号管理 - LINN 面部歪斜评估系统</title>
+  <style>
+    :root {
+      --green-primary: #2E7D32; --green-light: #4CAF50; --green-bg: #E8F5E9;
+      --purple-primary: #7B1FA2; --purple-light: #9C27B0; --purple-bg: #F3E5F5;
+      --bg: #F5F5F5; --card: #FFFFFF; --text: #212121; --text-secondary: #757575;
+      --danger: #D32F2F; --info: #1976D2; --border: #E0E0E0; --warning: #F57C00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    .topbar {
+      background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+      color: white; padding: 16px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar h1 { font-size: 16px; font-weight: 700; }
+    .topbar-right { display: flex; gap: 10px; }
+    .btn-small {
+      padding: 5px 12px; border: 1.5px solid white; border-radius: 20px;
+      background: transparent; color: white; font-size: 12px; cursor: pointer;
+    }
+    .btn-small:hover { background: white; color: var(--purple-primary); }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
+    .tab-bar {
+      display: flex; background: var(--card); border-radius: 10px; padding: 4px;
+      margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .tab { flex: 1; text-align: center; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
+    .tab.active { background: var(--purple-primary); color: white; }
+    .assessor-card {
+      background: var(--card); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 4px solid;
+    }
+    .assessor-card.待激活 { border-color: var(--warning); }
+    .assessor-card.已激活 { border-color: var(--green-primary); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .card-name { font-size: 16px; font-weight: 700; }
+    .card-email { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .card-meta { font-size: 11px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; }
+    .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .badge-待激活 { background: #FFF3E0; color: var(--warning); }
+    .badge-已激活 { background: var(--green-bg); color: var(--green-primary); }
+    .card-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .action-btn { flex: 1; padding: 9px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-activate { background: var(--green-primary); color: white; }
+    .btn-deactivate { background: #EEE; color: var(--text-secondary); }
+    .btn-delete { background: #FFEBEE; color: var(--danger); }
+    .empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); font-size: 14px; }
+    .empty .icon { font-size: 48px; margin-bottom: 12px; }
+    .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+    .stat-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .stat-card { flex: 1; background: var(--card); border-radius: 10px; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-card .num { font-size: 28px; font-weight: 800; color: var(--purple-primary); }
+    .stat-card .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #333; color: white; padding: 10px 20px; border-radius: 20px;
+      font-size: 13px; z-index: 9999; opacity: 0; transition: opacity 0.3s;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🔐 账号管理后台</h1>
+  <div class="topbar-right">
+    <button class="btn-small" onclick="loadData()">🔄 刷新</button>
+    <button class="btn-small" onclick="window.location.href='clients.html'">🏠 主页</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Stats -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="num" id="totalCount">-</div>
+      <div class="label">总账号</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="pendingCount">-</div>
+      <div class="label">待激活</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="activeCount">-</div>
+      <div class="label">已激活</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <div class="tab active" data-filter="all" onclick="setFilter('all')">全部</div>
+    <div class="tab" data-filter="待激活" onclick="setFilter('待激活')">待激活</div>
+    <div class="tab" data-filter="已激活" onclick="setFilter('已激活')">已激活</div>
+  </div>
+
+  <div id="listContainer">
+    <div class="loading">加载中...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_KEY = localStorage.getItem('linn_airtable_key') || '';
+const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
+let allRecords = [];
+let currentFilter = 'all';
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.filter === f);
+  });
+  render();
+}
+
+async function loadData() {
+  if (!API_KEY || !BASE_ID) {
+    document.getElementById('listContainer').innerHTML = `
+      <div class="empty"><div class="icon">⚙️</div>请先在系统配置 Airtable</div>`;
+    return;
+  }
+  document.getElementById('listContainer').innerHTML = '<div class="loading">加载中...</div>';
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors?sort[0][field]=CreatedAt&sort[0][direction]=desc`, {
+      headers: { Authorization: `Bearer ${API_KEY}` }
+    });
+    const data = await res.json();
+    if (!data.records) { document.getElementById('listContainer').innerHTML = '<div class="empty"><div class="icon">❌</div>加载失败</div>'; return; }
+    allRecords = data.records;
+    // Stats
+    document.getElementById('totalCount').textContent = allRecords.length;
+    document.getElementById('pendingCount').textContent = allRecords.filter(r => r.fields.Status === '待激活').length;
+    document.getElementById('activeCount').textContent = allRecords.filter(r => r.fields.Status === '已激活').length;
+    render();
+  } catch (e) {
+    document.getElementById('listContainer').innerHTML = '<div class="empty"><div class="icon">❌</div>' + e.message + '</div>';
+  }
+}
+
+function render() {
+  const filtered = currentFilter === 'all' ? allRecords : allRecords.filter(r => r.fields.Status === currentFilter);
+  const c = document.getElementById('listContainer');
+  if (filtered.length === 0) {
+    c.innerHTML = `<div class="empty"><div class="icon">📋</div>暂无账号记录</div>`;
+    return;
+  }
+  c.innerHTML = filtered.map(r => {
+    const f = r.fields;
+    const status = f.Status || '待激活';
+    const isPending = status === '待激活';
+    return `
+    <div class="assessor-card ${status}">
+      <div class="card-header">
+        <div class="card-name">${f.Name || '未填写姓名'}</div>
+        <span class="badge badge-${status}">${status}</span>
+      </div>
+      <div class="card-email">📧 ${f.Email || '—'}</div>
+      <div class="card-meta">
+        ${f.Phone ? `<span>📱 ${f.Phone}</span>` : ''}
+        <span>📅 ${f.CreatedAt || '—'}</span>
+      </div>
+      <div class="card-actions">
+        ${isPending
+          ? `<button class="action-btn btn-activate" onclick="activate('${r.id}')">✅ 开通账号</button>
+             <button class="action-btn btn-delete" onclick="removeRecord('${r.id}')">🗑️ 删除</button>`
+          : `<button class="action-btn btn-deactivate" onclick="deactivate('${r.id}')">⏸️ 停用</button>
+             <button class="action-btn btn-delete" onclick="removeRecord('${r.id}')">🗑️ 删除</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function activate(id) {
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { Status: '已激活' } })
+    });
+    if (res.ok) {
+      toast('✅ 账号已开通！');
+      loadData();
+    } else {
+      toast('❌ 操作失败');
+    }
+  } catch (e) { toast('❌ ' + e.message); }
+}
+
+async function deactivate(id) {
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { Status: '待激活' } })
+    });
+    if (res.ok) {
+      toast('⏸️ 账号已停用');
+      loadData();
+    } else {
+      toast('❌ 操作失败');
+    }
+  } catch (e) { toast('❌ ' + e.message); }
+}
+
+async function removeRecord(id) {
+  if (!confirm('确定删除该账号记录？')) return;
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Assessors/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${API_KEY}` }
+    });
+    if (res.ok) {
+      toast('🗑️ 已删除');
+      loadData();
+    } else {
+      toast('❌ 删除失败');
+    }
+  } catch (e) { toast('❌ ' + e.message); }
+}
+
+loadData();
+</script>
+</body>
+</html>
