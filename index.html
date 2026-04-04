@@ -183,6 +183,7 @@
       </div>
       <button type="submit" class="btn btn-primary">登 录</button>
       <button type="button" class="btn btn-secondary" id="guestBtn">演示模式（免登录）</button>
+    <button type="button" class="btn btn-ghost" onclick="window.location.href='register.html'" style="margin-top:8px;width:100%;padding:12px;border:2px solid var(--purple-primary);border-radius:10px;background:transparent;color:var(--purple-primary);font-size:14px;font-weight:700;cursor:pointer;">📝 申请评估师账号</button>
     </form>
     <div class="contact-info">
       学习&amp;合作联系<br>
@@ -217,6 +218,11 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       return;
     }
     const assessor = data.records[0].fields;
+    // Check account status
+    if (assessor.Status && assessor.Status !== '已激活') {
+      showError('账号尚未开通，请联系管理员 WeChat: LinnChang2017');
+      return;
+    }
     // Simple hash check (in production use proper bcrypt)
     const hash = await hashPassword(password);
     if (assessor.Password !== hash) {

@@ -137,11 +137,16 @@
     </div>
     <table class="field-table">
       <tr><th>表名</th><th>关键字段</th></tr>
-      <tr><td><strong>Assessors</strong></td><td>Name(文本), Email(文本), Password(文本)</td></tr>
+      <tr><td><strong>Assessors</strong></td><td>Name(文本), Email(文本), Password(文本), Status(单选), Phone(文本)</td></tr>
       <tr><td><strong>Clients</strong></td><td>Name(文本), Gender(单选), Age(数字), Assessor(文本), Phone(电话)</td></tr>
       <tr><td><strong>Assessments</strong></td><td>Client(关联), Assessor(文本), Status(单选), PseudoScore(数字), TrueScore(数字), ResultType(单选), CreatedAt(日期)</td></tr>
       <tr><td><strong>Recommendations</strong></td><td>Type(单选), SubType(文本), Title(文本), Content(长文本), Priority(数字)</td></tr>
     </table>
+    <div class="info-box" style="margin-top:12px;background:#FFF3E0;border-color:#F57C00;">
+      <strong>⚠️ Assessors 表 Status 字段说明：</strong><br>
+      评估师注册后 Status 默认为"待激活"，管理员手动改为"已激活"后方可登录。<br>
+      Status 选项：<strong>待激活 / 已激活</strong>
+    </div>
   </div>
 
   <div class="card">
