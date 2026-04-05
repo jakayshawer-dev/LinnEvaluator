@@ -282,8 +282,12 @@ function saveAndExport() {
 }
 
 async function goNext() {
-  saveData(true);
+  // 新建客户：清空旧的评估数据，从头开始
+  if (!clientId || clientId === 'new' || clientId.startsWith('demo') || clientId.startsWith('assess_')) {
+    localStorage.removeItem('linn_current_assessment');
+  }
 
+  saveData(true);
   let finalClientId = clientId;
 
   // 如果是新客户，先保存到 Supabase 获取真实 ID
@@ -303,13 +307,18 @@ async function goNext() {
           created_at: new Date().toISOString()
         }
       });
+      if (!newClient || !newClient.id) {
+        alert('❌ 客户保存失败，请重试');
+        return;
+      }
       finalClientId = newClient.id;
       // 更新 localStorage 中的 clientId
       let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
       assessment.clientId = finalClientId;
       localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
     } catch (e) {
-      console.error('客户保存失败:', e);
+      alert('❌ 客户保存失败：' + e.message);
+      return;
     }
   }
 

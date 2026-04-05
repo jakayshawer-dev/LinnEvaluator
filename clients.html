@@ -316,7 +316,8 @@ document.getElementById('searchInput').addEventListener('input', renderClients);
 
 // New client modal
 document.getElementById('newClientBtn').addEventListener('click', () => {
-  // 直接跳基础信息页，不弹窗
+  // 清空旧评估数据，确保新客户从零开始
+  localStorage.removeItem('linn_current_assessment');
   window.location.href = 'basic-info.html?client=new';
 });
 
@@ -406,7 +407,7 @@ function renderClients() {
       ? `<span class="badge ${lastAssessment.fields.Status === '已完成' ? 'badge-status-done' : 'badge-status-pending'}">${lastAssessment.fields.Status || '进行中'}</span>`
       : `<span class="badge badge-status-pending">未评估</span>`;
     return `
-    <div class="client-card" onclick="window.location.href='basic-info.html?client=${c.id}'">
+    <div class="client-card" onclick="localStorage.removeItem('linn_current_assessment'); window.location.href='basic-info.html?client=${c.id}'">
       <div class="client-info">
         <h3>${c.fields.Name} ${c.fields.Gender ? `<span class="badge badge-${c.fields.Gender === '男' ? 'male' : 'female'}">${c.fields.Gender}</span>` : ''}</h3>
         <div class="client-meta">
@@ -424,6 +425,7 @@ function renderClients() {
 }
 
 function startAssessment(clientId) {
+  localStorage.removeItem('linn_current_assessment');
   window.location.href = `basic-info.html?client=${clientId}`;
 }
 
