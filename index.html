@@ -76,7 +76,6 @@
         <input type="password" id="password" placeholder="请输入密码" required autocomplete="current-password">
       </div>
       <button type="submit" class="btn btn-primary">登 录</button>
-      <button type="button" class="btn-ghost" id="guestBtn">演示模式（免登录）</button>
       <button type="button" class="btn-ghost" id="registerBtn">📝 申请评估师账号</button>
     </form>
     <div class="contact-info">
@@ -142,12 +141,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   } catch (err) {
     showError('登录失败：' + err.message);
   }
-});
-
-document.getElementById('guestBtn').addEventListener('click', () => {
-  localStorage.setItem('linn_assessor_name', '演示评估师');
-  localStorage.setItem('linn_guest_mode', 'true');
-  window.location.href = 'clients.html';
 });
 
 document.getElementById('registerBtn').addEventListener('click', () => {
