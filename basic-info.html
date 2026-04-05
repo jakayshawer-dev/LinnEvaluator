@@ -281,9 +281,39 @@ function saveAndExport() {
   URL.revokeObjectURL(url);
 }
 
-function goNext() {
+async function goNext() {
   saveData(true);
-  window.location.href = 'overview.html' + (clientId ? '?client=' + clientId : '');
+
+  let finalClientId = clientId;
+
+  // 如果是新客户，先保存到 Supabase 获取真实 ID
+  if (!clientId || clientId === 'new' || clientId.startsWith('demo') || clientId.startsWith('assess_')) {
+    const name = document.getElementById('clientNameInput').value.trim() || '未命名客户';
+    const gender = document.getElementById('clientGender').value;
+    const age = parseInt(document.getElementById('clientAge').value) || 0;
+    try {
+      const newClient = await supabaseFetch('clients', {
+        method: 'POST',
+        body: {
+          name,
+          gender,
+          age,
+          phone: '',
+          assessor: localStorage.getItem('linn_assessor_name'),
+          created_at: new Date().toISOString()
+        }
+      });
+      finalClientId = newClient.id;
+      // 更新 localStorage 中的 clientId
+      let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+      assessment.clientId = finalClientId;
+      localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
+    } catch (e) {
+      console.error('客户保存失败:', e);
+    }
+  }
+
+  window.location.href = 'overview.html' + (finalClientId ? '?client=' + finalClientId : '');
 }
 </script>
 </body>
