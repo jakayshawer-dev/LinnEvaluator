@@ -68,12 +68,6 @@
     .btn-prev { background: #EEE; color: var(--text-secondary); }
     .btn-next { background: linear-gradient(135deg, var(--green-primary), var(--green-light)); color: white; }
     .btn-save { background: var(--purple-primary); color: white; }
-    .auto-save-badge {
-      position: fixed; top: 70px; right: 16px; background: var(--green-bg); color: var(--green-primary);
-      padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
-      opacity: 0; transition: opacity 0.3s; z-index: 99;
-    }
-    .auto-save-badge.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -85,8 +79,6 @@
   </div>
   <div class="title">基础信息</div>
 </div>
-
-<div class="auto-save-badge" id="saveBadge">✓ 已自动保存</div>
 
 <div class="container">
   <div class="info-card" style="border-left: 4px solid var(--green-primary);">
@@ -148,7 +140,7 @@
 
 <div class="bottom-bar">
   <button class="btn btn-prev" onclick="window.location.href='clients.html'">← 返回客户</button>
-  <button class="btn btn-save" onclick="saveAndExport()">💾 保存</button>
+  <button class="btn btn-save" onclick="saveData()">💾 保存</button>
   <button class="btn btn-next" onclick="goNext()">下一步 →</button>
 </div>
 
@@ -177,20 +169,6 @@ async function supabaseFetch(table, options = {}) {
 const urlParams = new URLSearchParams(window.location.search);
 const clientId = urlParams.get('client') || '';
 
-// Auto-save
-let saveTimeout;
-function triggerAutoSave() {
-  clearTimeout(saveTimeout);
-  document.getElementById('saveBadge').classList.remove('show');
-  saveTimeout = setTimeout(() => {
-    saveData(true);
-    document.getElementById('saveBadge').classList.add('show');
-    setTimeout(() => document.getElementById('saveBadge').classList.remove('show'), 2000);
-  }, 1500);
-}
-
-const inputs = document.querySelectorAll('input, select, textarea');
-inputs.forEach(el => el.addEventListener('input', triggerAutoSave));
 
 // Init
 document.getElementById('assessorName').value = ASSESSOR_NAME;
