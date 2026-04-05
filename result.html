@@ -436,8 +436,18 @@ const SUPABASE_URL = 'https://uyktwvnllouhvovqpnrd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3R3dm5sbG91aHZvdnFwbnJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDAwNzgsImV4cCI6MjA5MDg3NjA3OH0.V6M9zBZekUHvJ7Xz9kge0_cqBbMbX-2MxUl1rWhxt-0';
 
 function isAssessorLoggedIn() {
-  const name = localStorage.getItem('linn_assessor_name') || '';
-  return name && name !== '演示评估师';
+  // 有注册评估师账号且非演示模式即为登录
+  const assessor = localStorage.getItem('linn_assessor');
+  const guestMode = localStorage.getItem('linn_guest_mode');
+  if (guestMode === 'true') return false;
+  if (assessor) {
+    try {
+      const obj = JSON.parse(assessor);
+      if (obj && obj.name && obj.name !== '演示评估师') return true;
+    } catch (e) {}
+  }
+  const name = localStorage.getItem('linn_assessor_name');
+  return !!(name && name !== '演示评估师');
 }
 
 function checkDemoMode() {
