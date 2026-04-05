@@ -153,8 +153,6 @@
 </div>
 
 <script>
-const API_KEY = localStorage.getItem('linn_airtable_key') || '';
-const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
 const ASSESSOR_NAME = localStorage.getItem('linn_assessor_name') || '演示评估师';
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -183,21 +181,10 @@ document.getElementById('assessmentDate').value = new Date().toISOString().split
 async function loadClient() {
   if (!clientId || clientId.startsWith('demo') || clientId === 'new') {
     document.getElementById('clientName').textContent = '演示客户';
-    document.getElementById('clientMeta').textContent = '演示模式 · 无需Airtable连接';
+    document.getElementById('clientMeta').textContent = '演示模式';
     document.getElementById('clientNameInput').value = '演示客户';
     return;
   }
-  try {
-      headers: { Authorization: `Bearer ${API_KEY}` }
-    });
-    const data = await res.json();
-    const f = data.fields;
-    document.getElementById('clientName').textContent = f.Name;
-    document.getElementById('clientMeta').textContent = `${f.Gender || ''} ${f.Age ? f.Age + '岁' : ''} · ${f.Assessor || ''}`;
-    document.getElementById('clientNameInput').value = f.Name || '';
-    document.getElementById('clientGender').value = f.Gender || '';
-    document.getElementById('clientAge').value = f.Age || '';
-  } catch (e) { console.error(e); }
 }
 
 // Load existing assessment data
@@ -240,33 +227,6 @@ async function saveData(silent = false) {
   }
 
   localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
-
-  // Save to Airtable if configured
-  if (API_KEY && BASE_ID && !clientId.startsWith('demo')) {
-    const fields = {
-      Assessor: ASSESSOR_NAME,
-      Client: [clientId],
-      Status: '进行中',
-      BasicInfo: JSON.stringify(basicInfo),
-      CreatedAt: assessment.createdAt.split('T')[0]
-    };
-    if (assessment.airtableId) {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields })
-      });
-    } else {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields })
-      });
-      const data = await res.json();
-      if (data.id) {
-        assessment.airtableId = data.id;
-        localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
-      }
-    }
-  }
 
   if (!silent) {
     alert('✅ 基础信息已保存');
