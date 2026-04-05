@@ -350,7 +350,7 @@ document.getElementById('confirmNewClient').addEventListener('click', async () =
       }
     });
     closeModal();
-    loadClients();
+    window.location.href = `basic-info.html?client=${newClient.id}`;
   } catch (e) {
     alert('创建失败：' + e.message);
   }
