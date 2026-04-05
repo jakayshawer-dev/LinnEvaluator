@@ -272,25 +272,26 @@ async function goNext() {
 
   if (isNew) {
     const name = document.getElementById('clientNameInput').value.trim() || '未命名客户';
-    const gender = document.getElementById('clientGender').value;
+    const gender = document.getElementById('clientGender').value || '';
     const age = parseInt(document.getElementById('clientAge').value) || 0;
-    console.log('[goNext] 创建客户:', { name, gender, age });
+    const assessorName = localStorage.getItem('linn_assessor_name') || '未知评估师';
+    console.log('[goNext] 创建客户, assessor:', assessorName, 'name:', name);
     try {
+      const payload = { name, gender, age, assessor: assessorName };
+      console.log('[goNext] POST payload:', JSON.stringify(payload));
       const res = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=representation' },
-        body: JSON.stringify({
-          name,
-          gender,
-          age,
-          phone: '',
-          assessor: localStorage.getItem('linn_assessor_name')
-        })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
-      console.log('[goNext] 创建客户响应:', res.status, data);
-      if (!res.ok || !data.id) {
-        alert('❌ 客户保存失败：' + (data.message || data.error || res.statusText));
+      console.log('[goNext] 创建客户响应状态:', res.status, '数据:', JSON.stringify(data).substring(0, 200));
+      if (!res.ok) {
+        alert('❌ 客户保存失败(' + res.status + ')：' + JSON.stringify(data));
+        return;
+      }
+      if (!data.id) {
+        alert('❌ 客户保存失败：服务器未返回ID');
         return;
       }
       finalClientId = data.id;
