@@ -120,6 +120,7 @@
     }
     .btn-icon:hover { transform: scale(1.1); }
     .btn-new-assessment { background: var(--green-bg); color: var(--green-primary); }
+    .btn-delete { background: #FFEBEE; color: var(--danger); }
     .btn-view { background: #EEE; color: var(--text-secondary); }
     .empty-state {
       text-align: center;
@@ -419,6 +420,7 @@ function renderClients() {
       <div class="client-actions">
         ${statusBadge}
         <button class="btn-icon btn-new-assessment" onclick="event.stopPropagation(); startAssessment('${c.id}')" title="新建评估">➕</button>
+        <button class="btn-icon btn-delete" onclick="event.stopPropagation(); deleteClient('${c.id}')" title="删除客户">🗑️</button>
       </div>
     </div>`;
   }).join('');
@@ -427,6 +429,19 @@ function renderClients() {
 function startAssessment(clientId) {
   localStorage.removeItem('linn_current_assessment');
   window.location.href = `basic-info.html?client=${clientId}`;
+}
+
+async function deleteClient(clientId) {
+  if (!confirm('确定要删除该客户吗？删除后无法恢复。')) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${encodeURIComponent(clientId)}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    loadClients();
+  } catch (e) {
+    alert('删除失败：' + e.message);
+  }
 }
 
 // Load
