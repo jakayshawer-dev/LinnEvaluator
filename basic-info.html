@@ -284,17 +284,16 @@ async function goNext() {
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=representation' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      console.log('[goNext] 创建客户响应状态:', res.status, '数据:', JSON.stringify(data).substring(0, 200));
-      if (!res.ok) {
-        alert('❌ 客户保存失败(' + res.status + ')：' + JSON.stringify(data));
+      const rawData = await res.text();
+      console.log('[goNext] 创建客户原始响应:', res.status, rawData.substring(0, 300));
+      let data;
+      try { data = JSON.parse(rawData); } catch (e) { data = {}; }
+      const newId = Array.isArray(data) ? (data[0]?.id || null) : (data?.id || null);
+      if (!res.ok || !newId) {
+        alert('❌ 客户保存失败(' + res.status + ')：' + rawData.substring(0, 100));
         return;
       }
-      if (!data.id) {
-        alert('❌ 客户保存失败：服务器未返回ID');
-        return;
-      }
-      finalClientId = data.id;
+      finalClientId = newId;
       let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
       assessment.clientId = finalClientId;
       localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
