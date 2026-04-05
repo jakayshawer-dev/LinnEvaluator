@@ -137,6 +137,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       id: assessor.id, name: assessor.name, email: assessor.email
     }));
     localStorage.setItem('linn_assessor_name', assessor.name);
+    // 登录成功后清除旧的演示评估数据，避免残留
+    localStorage.removeItem('linn_current_assessment');
+    localStorage.removeItem('linn_guest_mode');
     window.location.href = 'clients.html';
   } catch (err) {
     showError('登录失败：' + err.message);

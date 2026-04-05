@@ -196,7 +196,21 @@ inputs.forEach(el => el.addEventListener('input', triggerAutoSave));
 document.getElementById('assessorName').value = ASSESSOR_NAME;
 document.getElementById('assessmentDate').value = new Date().toISOString().split('T')[0];
 
-// Load client data
+// Load existing assessment data first (from localStorage), then overlay with fresh client data
+function loadAssessmentData() {
+  const saved = localStorage.getItem('linn_current_assessment');
+  if (saved) {
+    const data = JSON.parse(saved);
+    if (data.basicInfo) {
+      Object.entries(data.basicInfo).forEach(([k, v]) => {
+        const el = document.getElementById(k);
+        if (el) el.value = v || '';
+      });
+    }
+  }
+}
+
+// Load client data from Supabase
 async function loadClient() {
   if (!clientId || clientId.startsWith('demo') || clientId === 'new') {
     document.getElementById('clientName').textContent = '新客户';
@@ -219,21 +233,9 @@ async function loadClient() {
   }
 }
 
-// Load existing assessment data
-function loadAssessmentData() {
-  const saved = localStorage.getItem('linn_current_assessment');
-  if (saved) {
-    const data = JSON.parse(saved);
-    if (data.basicInfo) {
-      Object.keys(data.basicInfo).forEach(k => {
-        const el = document.getElementById(k);
-        if (el) el.value = data.basicInfo[k];
-      });
-    }
-  }
-}
-loadClient();
+// Init: run both, with client data taking priority
 loadAssessmentData();
+loadClient();
 
 async function saveData(silent = false) {
   const basicInfo = {
