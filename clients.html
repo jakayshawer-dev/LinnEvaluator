@@ -360,9 +360,10 @@ document.getElementById('confirmNewClient').addEventListener('click', async () =
 
 async function loadClients() {
   try {
+    const assessorFilter = ASSESSOR_NAME ? { assessor: ASSESSOR_NAME } : {};
     const [clients, assessments] = await Promise.all([
-      supabaseFetch('clients', { filters: { assessor: ASSESSOR_NAME } }),
-      supabaseFetch('assessments', { filters: { assessor: ASSESSOR_NAME } })
+      supabaseFetch('clients', { filters: assessorFilter }),
+      supabaseFetch('assessments', { filters: assessorFilter })
     ]);
     allClients = clients.map(c => ({ id: c.id, fields: { Name: c.name, Gender: c.gender, Age: c.age, Phone: c.phone, Assessor: c.assessor, CreatedAt: c.created_at ? c.created_at.split('T')[0] : '' }, _assessments: assessments.filter(a => a.client_id === c.id) }));
 
@@ -381,9 +382,9 @@ function renderClients() {
 
   let filtered = allClients;
   if (currentFilter === 'pending') {
-    filtered = allClients.filter(c => c._assessments.some(a => a.fields.Status === '进行中'));
+    filtered = allClients.filter(c => c._assessments.some(a => a.status === '进行中'));
   } else if (currentFilter === 'done') {
-    filtered = allClients.filter(c => c._assessments.length > 0 && c._assessments.every(a => a.fields.Status === '已完成'));
+    filtered = allClients.filter(c => c._assessments.length > 0 && c._assessments.every(a => a.status === '已完成'));
   }
 
   if (keyword) {
@@ -405,7 +406,7 @@ function renderClients() {
   container.innerHTML = filtered.map(c => {
     const lastAssessment = c._assessments[c._assessments.length - 1];
     const statusBadge = lastAssessment
-      ? `<span class="badge ${lastAssessment.fields.Status === '已完成' ? 'badge-status-done' : 'badge-status-pending'}">${lastAssessment.fields.Status || '进行中'}</span>`
+      ? `<span class="badge ${lastAssessment.status === '已完成' ? 'badge-status-done' : 'badge-status-pending'}">${lastAssessment.status || '进行中'}</span>`
       : `<span class="badge badge-status-pending">未评估</span>`;
     return `
     <div class="client-card" onclick="localStorage.removeItem('linn_current_assessment'); window.location.href='basic-info.html?client=${c.id}'">
