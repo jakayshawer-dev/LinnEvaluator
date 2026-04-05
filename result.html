@@ -27,7 +27,55 @@
       background: transparent; color: white; font-size: 12px; cursor: pointer;
     }
     .btn-print:hover { background: white; color: var(--green-primary); }
-    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 30px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 30px; position: relative; }
+
+    /* 演示模式遮罩 */
+    .demo-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+    }
+    .demo-modal {
+      background: white;
+      border-radius: 20px;
+      padding: 32px 28px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .demo-modal .icon { font-size: 48px; margin-bottom: 12px; }
+    .demo-modal h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+    .demo-modal p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
+    .demo-modal .btn-login {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .demo-modal .btn-guest {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .blur-content { filter: blur(6px); pointer-events: none; user-select: none; }
 
     /* Result Hero */
     .result-hero {
@@ -151,6 +199,17 @@
 
   <!-- Hero Section (filled by JS) -->
   <div id="resultHero"></div>
+
+  <!-- 演示模式遮罩 -->
+  <div id="demoOverlay" class="demo-overlay" style="display:none;">
+    <div class="demo-modal">
+      <div class="icon">🔒</div>
+      <h3>完整报告需登录后查看</h3>
+      <p>登录账号可查看完整评估报告<br>包含详细分析和改善建议</p>
+      <button class="btn-login" onclick="window.location.href='index.html'">立即登录</button>
+      <button class="btn-guest" onclick="document.getElementById('demoOverlay').style.display='none'; document.getElementById('reportContent').classList.remove('blur-content');">稍后再说</button>
+    </div>
+  </div>
 
   <!-- Comparison Bar -->
   <div class="result-card" id="comparisonCard">
@@ -374,7 +433,23 @@ function getFactorRank(items, calcFn) {
     .sort((a, b) => b.score - a.score);
 }
 
+const SUPABASE_URL = 'https://uyktwvnllouhvovqpnrd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3R3dm5sbG91aHZvdnFwbnJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDAwNzgsImV4cCI6MjA5MDg3NjA3OH0.V6M9zBZekUHvJ7Xz9kge0_cqBbMbX-2MxUl1rWhxt-0';
+
+function isAssessorLoggedIn() {
+  const name = localStorage.getItem('linn_assessor_name') || '';
+  return name && name !== '演示评估师';
+}
+
+function checkDemoMode() {
+  if (!isAssessorLoggedIn()) {
+    document.getElementById('demoOverlay').style.display = 'flex';
+    document.getElementById('reportContent').classList.add('blur-content');
+  }
+}
+
 function render() {
+  checkDemoMode();
   const data = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
   window.assessmentData = data;
 
@@ -556,7 +631,7 @@ function render() {
 }
 
 async function finishAssessment() {
-  if (!confirm('确认完成评估？评估数据将保存至 Airtable。')) return;
+  if (!confirm('确认完成评估？')) return;
 
   let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
   const pseudoScore = assessment.pseudoScore || 0;
@@ -566,54 +641,55 @@ async function finishAssessment() {
   if (diff >= 3 && pseudoScore > trueScore) resultType = '假性主导型';
   else if (diff >= 3 && trueScore > pseudoScore) resultType = '真性主导型';
 
-  const API_KEY = localStorage.getItem('linn_airtable_key') || '';
-  const BASE_ID = localStorage.getItem('linn_airtable_base') || '';
+  assessment.status = '已完成';
+  assessment.finishedAt = new Date().toISOString();
+  assessment.resultType = resultType;
+  assessment.pseudoScore = pseudoScore;
+  assessment.trueScore = trueScore;
+  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
 
-  if (API_KEY && BASE_ID) {
-    const fields = {
-      Assessor: assessment.basicInfo?.assessorName || localStorage.getItem('linn_assessor_name'),
-      Client: assessment.clientId && !assessment.clientId.startsWith('demo') ? [assessment.clientId] : [],
-      Status: '已完成',
-      BasicInfo: JSON.stringify(assessment.basicInfo || {}),
-      FaceBenchmark: JSON.stringify(assessment.faceBenchmark || {}),
-      FaceMainDirection: assessment.faceMainDirection || 'unclear',
-      PseudoAssessment: JSON.stringify(assessment.pseudoAssessment || {}),
-      TrueAssessment: JSON.stringify(assessment.trueAssessment || {}),
-      PseudoScore: pseudoScore,
-      TrueScore: trueScore,
-      ResultType: resultType,
-      PseudoPercent: pseudoScore + trueScore > 0 ? Math.round(pseudoScore / (pseudoScore + trueScore) * 100) : 50,
-      CreatedAt: (assessment.basicInfo?.assessmentDate || new Date().toISOString().split('T')[0])
-    };
-    try {
-      if (assessment.airtableId) {
-          method: 'PATCH',
-          headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields })
-        });
-      } else {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields })
-        });
-        const data = await res.json();
-        if (data.id) {
-          assessment.airtableId = data.id;
-        }
-      }
-      assessment.status = '已完成';
-      localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
-      alert('✅ 评估已完成并保存！');
-      window.location.href = 'clients.html';
-    } catch (e) {
-      alert('保存失败：' + e.message);
+  // Save to Supabase
+  try {
+    if (assessment.supabaseId) {
+      await fetch(`${SUPABASE_URL}/rest/v1/assessments/${assessment.supabaseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({
+          status: '已完成',
+          result_type: resultType,
+          pseudo_score: pseudoScore,
+          true_score: trueScore,
+          basic_info: assessment.basicInfo,
+          face_benchmark: assessment.faceBenchmark,
+          pseudo_assessment: assessment.pseudoAssessment,
+          true_assessment: assessment.trueAssessment
+        })
+      });
+    } else {
+      await fetch(`${SUPABASE_URL}/rest/v1/assessments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({
+          assessor: localStorage.getItem('linn_assessor_name'),
+          client_id: assessment.clientId || null,
+          status: '已完成',
+          result_type: resultType,
+          pseudo_score: pseudoScore,
+          true_score: trueScore,
+          basic_info: assessment.basicInfo,
+          face_benchmark: assessment.faceBenchmark,
+          pseudo_assessment: assessment.pseudoAssessment,
+          true_assessment: assessment.trueAssessment,
+          created_at: new Date().toISOString()
+        })
+      });
     }
-  } else {
-    assessment.status = '已完成';
-    localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
-    alert('✅ 评估已完成（演示模式，数据仅保存在本地）');
-    window.location.href = 'clients.html';
+  } catch (e) {
+    console.error('保存失败:', e);
   }
+
+  alert('✅ 评估已完成并保存！');
+  window.location.href = 'clients.html';
 }
 
 function saveAndExport() {
