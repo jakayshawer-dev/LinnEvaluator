@@ -29,53 +29,55 @@
     .btn-print:hover { background: white; color: var(--green-primary); }
     .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 30px; position: relative; }
 
-    /* 演示模式遮罩 */
-    .demo-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
+    /* 演示模式遮罩 - 仅模糊改善建议区域 */
+    #demoSectionOverlay {
+      position: relative;
     }
-    .demo-modal {
+    #demoSectionOverlay.blurred #recommendations {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+    }
+    .demo-section-msg {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
       background: white;
-      border-radius: 20px;
-      padding: 32px 28px;
+      border-radius: 16px;
+      padding: 20px 24px;
       text-align: center;
-      max-width: 320px;
-      width: 90%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      width: 240px;
     }
-    .demo-modal .icon { font-size: 48px; margin-bottom: 12px; }
-    .demo-modal h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
-    .demo-modal p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
-    .demo-modal .btn-login {
+    #demoSectionOverlay.blurred .demo-section-msg { display: block; }
+    .demo-section-msg .icon { font-size: 32px; margin-bottom: 8px; }
+    .demo-section-msg p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px; }
+    .demo-section-msg .btn-login {
       display: block;
       width: 100%;
-      padding: 13px;
+      padding: 11px;
       background: linear-gradient(135deg, var(--green-primary), var(--green-light));
       color: white;
       border: none;
-      border-radius: 12px;
-      font-size: 15px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      margin-bottom: 10px;
     }
-    .demo-modal .btn-guest {
+    .demo-section-msg .btn-guest {
       display: block;
       width: 100%;
-      padding: 10px;
+      padding: 8px;
       background: transparent;
       color: var(--text-secondary);
       border: none;
-      font-size: 13px;
+      font-size: 12px;
       cursor: pointer;
+      margin-top: 6px;
     }
-    .blur-content { filter: blur(6px); pointer-events: none; user-select: none; }
 
     /* Result Hero */
     .result-hero {
@@ -200,17 +202,6 @@
   <!-- Hero Section (filled by JS) -->
   <div id="resultHero"></div>
 
-  <!-- 演示模式遮罩 -->
-  <div id="demoOverlay" class="demo-overlay" style="display:none;">
-    <div class="demo-modal">
-      <div class="icon">🔒</div>
-      <h3>完整报告需登录后查看</h3>
-      <p>登录账号可查看完整评估报告<br>包含详细分析和改善建议</p>
-      <button class="btn-login" onclick="window.location.href='index.html'">立即登录</button>
-      <button class="btn-guest" onclick="document.getElementById('demoOverlay').style.display='none'; document.getElementById('reportContent').classList.remove('blur-content');">稍后再说</button>
-    </div>
-  </div>
-
   <!-- Comparison Bar -->
   <div class="result-card" id="comparisonCard">
     <div class="card-header">
@@ -242,8 +233,16 @@
   <div id="trueFactors"></div>
 
   <!-- Recommendations -->
-  <div class="section-title">💡 改善建议</div>
-  <div id="recommendations"></div>
+  <div id="demoSectionOverlay">
+    <div class="section-title">💡 改善建议</div>
+    <div id="recommendations"></div>
+    <div class="demo-section-msg">
+      <div class="icon">🔒</div>
+      <p>完整改善建议<br>需登录账号后查看</p>
+      <button class="btn-login" onclick="window.location.href='index.html'">立即登录</button>
+      <button class="btn-guest" onclick="document.getElementById('demoSectionOverlay').classList.remove('blurred')">稍后再说</button>
+    </div>
+  </div>
 
   <!-- Assessment Info Footer -->
   <div class="info-footer" id="infoFooter"></div>
@@ -443,8 +442,7 @@ function isAssessorLoggedIn() {
 
 function checkDemoMode() {
   if (!isAssessorLoggedIn()) {
-    document.getElementById('demoOverlay').style.display = 'flex';
-    document.getElementById('reportContent').classList.add('blur-content');
+    document.getElementById('demoSectionOverlay').classList.add('blurred');
   }
 }
 
