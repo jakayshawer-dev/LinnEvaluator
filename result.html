@@ -642,6 +642,7 @@ async function finishAssessment() {
   if (!confirm('确认完成评估？')) return;
 
   let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
+  const basicInfo = assessment.basicInfo || {};
   const pseudoScore = assessment.pseudoScore || 0;
   const trueScore = assessment.trueScore || 0;
   const diff = Math.abs(pseudoScore - trueScore);
@@ -650,65 +651,73 @@ async function finishAssessment() {
   else if (diff >= 3 && trueScore > pseudoScore) resultType = '真性主导型';
 
   assessment.status = '已完成';
-  assessment.finishedAt = new Date().toISOString();
   assessment.resultType = resultType;
   assessment.pseudoScore = pseudoScore;
   assessment.trueScore = trueScore;
-  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
 
-  // Save to Supabase
-  try {
-    if (assessment.supabaseId) {
-      await fetch(`${SUPABASE_URL}/rest/v1/assessments/${assessment.supabaseId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-        body: JSON.stringify({
-          status: '已完成',
-          result_type: resultType,
-          pseudo_score: pseudoScore,
-          true_score: trueScore,
-          basic_info: assessment.basicInfo,
-          face_benchmark: assessment.faceBenchmark,
-          pseudo_assessment: assessment.pseudoAssessment,
-          true_assessment: assessment.trueAssessment
-        })
-      });
-    } else {
-      await fetch(`${SUPABASE_URL}/rest/v1/assessments`, {
+  const assessor = localStorage.getItem('linn_assessor_name') || '未知评估师';
+  const clientId = assessment.clientId;
+  const isNewClient = !clientId || clientId.startsWith('demo') || clientId.startsWith('assess_') || clientId === 'new';
+
+  // 1. 创建客户（如果是新客户）
+  let finalClientId = clientId;
+  if (isNewClient) {
+    const clientName = basicInfo.clientName || '未命名客户';
+    const gender = basicInfo.clientGender || '';
+    const age = parseInt(basicInfo.clientAge) || 0;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-        body: JSON.stringify({
-          assessor: localStorage.getItem('linn_assessor_name'),
-          client_id: assessment.clientId || null,
-          status: '已完成',
-          result_type: resultType,
-          pseudo_score: pseudoScore,
-          true_score: trueScore,
-          basic_info: assessment.basicInfo,
-          face_benchmark: assessment.faceBenchmark,
-          pseudo_assessment: assessment.pseudoAssessment,
-          true_assessment: assessment.trueAssessment,
-          created_at: new Date().toISOString()
-        })
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ name: clientName, gender, age, assessor })
       });
+      const text = await res.text();
+      let clientData;
+      try { clientData = JSON.parse(text); } catch { clientData = {}; }
+      const newId = Array.isArray(clientData) ? (clientData[0]?.id || null) : (clientData?.id || null);
+      if (!res.ok || !newId) {
+        alert('❌ 客户创建失败：' + text.substring(0, 100));
+        return;
+      }
+      finalClientId = newId;
+      assessment.clientId = finalClientId;
+    } catch (e) {
+      alert('❌ 客户创建失败：' + e.message);
+      return;
     }
-  } catch (e) {
-    console.error('保存失败:', e);
   }
 
+  // 2. 保存评估记录
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/assessments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({
+        assessor,
+        client_id: finalClientId,
+        status: '已完成',
+        result_type: resultType,
+        pseudo_score: pseudoScore,
+        true_score: trueScore,
+        basic_info: assessment.basicInfo,
+        face_benchmark: assessment.faceBenchmark,
+        pseudo_assessment: assessment.pseudoAssessment,
+        true_assessment: assessment.trueAssessment
+      })
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      alert('❌ 评估保存失败：' + err.substring(0, 100));
+      return;
+    }
+  } catch (e) {
+    alert('❌ 评估保存失败：' + e.message);
+    return;
+  }
+
+  localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
   alert('✅ 评估已完成并保存！');
   window.location.href = 'clients.html';
-}
-
-function saveAndExport() {
-  const assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
-  const name = assessment.basicInfo?.clientName || '未命名';
-  const date = new Date().toISOString().split('T')[0];
-  const blob = new Blob([JSON.stringify(assessment, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `LinnEvaluator_${name}_${date}.json`; a.click();
-  URL.revokeObjectURL(url);
 }
 
 render();

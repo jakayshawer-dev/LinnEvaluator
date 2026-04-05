@@ -195,7 +195,6 @@
 
 <div class="bottom-bar">
   <button class="btn btn-prev" onclick="window.location.href='basic-info.html'">← 上一步</button>
-  <button class="btn btn-save" onclick="saveAndExport()">💾 保存</button>
   <button class="btn btn-next" onclick="goNext()">面部基准 →</button>
 </div>
 
@@ -422,7 +421,6 @@ function saveAndExport() {
 }
 
 function goNext() {
-  saveData(true);
   const params = new URLSearchParams(window.location.search);
   window.location.href = 'face-benchmark.html' + (params.get('client') ? '?client=' + params.get('client') : '');
 }

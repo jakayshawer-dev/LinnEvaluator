@@ -150,7 +150,6 @@
 
 <div class="bottom-bar">
   <button class="btn btn-prev" onclick="window.location.href='pseudo-assessment.html'">← 上一步</button>
-  <button class="btn btn-save" onclick="saveAndExport()">💾 保存</button>
   <button class="btn btn-next" onclick="goResult()">查看结果 →</button>
 </div>
 
@@ -322,7 +321,6 @@ function updateTypeScore(typeId) {
 }
 
 function goResult() {
-  saveData(true);
   const params = new URLSearchParams(window.location.search);
   window.location.href = 'result.html' + (params.get('client') ? '?client=' + params.get('client') : '');
 }

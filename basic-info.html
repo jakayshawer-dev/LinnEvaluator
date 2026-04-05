@@ -140,7 +140,6 @@
 
 <div class="bottom-bar">
   <button class="btn btn-prev" onclick="window.location.href='clients.html'">← 返回客户</button>
-  <button class="btn btn-save" onclick="saveData()">💾 保存</button>
   <button class="btn btn-next" onclick="goNext()">下一步 →</button>
 </div>
 
@@ -259,52 +258,10 @@ function saveAndExport() {
   URL.revokeObjectURL(url);
 }
 
-async function goNext() {
-  const isNew = !clientId || clientId === 'new' || clientId.startsWith('demo') || clientId.startsWith('assess_');
-  console.log('[goNext] clientId:', clientId, 'isNew:', isNew);
-
-  if (isNew) {
-    localStorage.removeItem('linn_current_assessment');
-  }
-
+function goNext() {
+  // 只保存到本地，不请求网络，跳转前确保表单数据进入 localStorage
   saveData(true);
-  let finalClientId = clientId;
-
-  if (isNew) {
-    const name = document.getElementById('clientNameInput').value.trim() || '未命名客户';
-    const gender = document.getElementById('clientGender').value || '';
-    const age = parseInt(document.getElementById('clientAge').value) || 0;
-    const assessorName = localStorage.getItem('linn_assessor_name') || '未知评估师';
-    console.log('[goNext] 创建客户, assessor:', assessorName, 'name:', name);
-    try {
-      const payload = { name, gender, age, assessor: assessorName };
-      console.log('[goNext] POST payload:', JSON.stringify(payload));
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=representation' },
-        body: JSON.stringify(payload)
-      });
-      const rawData = await res.text();
-      console.log('[goNext] 创建客户原始响应:', res.status, rawData.substring(0, 300));
-      let data;
-      try { data = JSON.parse(rawData); } catch (e) { data = {}; }
-      const newId = Array.isArray(data) ? (data[0]?.id || null) : (data?.id || null);
-      if (!res.ok || !newId) {
-        alert('❌ 客户保存失败(' + res.status + ')：' + rawData.substring(0, 100));
-        return;
-      }
-      finalClientId = newId;
-      let assessment = JSON.parse(localStorage.getItem('linn_current_assessment') || '{}');
-      assessment.clientId = finalClientId;
-      localStorage.setItem('linn_current_assessment', JSON.stringify(assessment));
-    } catch (e) {
-      console.error('[goNext] 创建客户异常:', e);
-      alert('❌ 客户保存失败：' + e.message);
-      return;
-    }
-  }
-
-  window.location.href = 'overview.html' + (finalClientId ? '?client=' + finalClientId : '');
+  window.location.href = 'overview.html' + (clientId ? '?client=' + clientId : '');
 }
 </script>
 </body>
