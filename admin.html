@@ -109,6 +109,56 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// Locale auto-detection:
+// 1. URL param ?lang=tw overrides
+// 2. Pathname contains "TW" → TW locale
+const LOCALE = (() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('lang') !== null) {
+    return params.get('lang').toUpperCase() === 'TW' ? 'TW' : 'CN';
+  }
+  return window.location.pathname.includes('TW') ? 'TW' : 'CN';
+})();
+
+const I18N = {
+  CN: {
+    title: '账号管理 - LINN 面部歪斜评估系统',
+    lang: 'zh-CN',
+    loading: '加载中...',
+    noRecords: '暂无账号记录',
+    btnDelete: '🗑️ 删除',
+    btnActivate: '✅ 开通账号',
+    btnDeactivate: '⏸️ 停用',
+    confirmDelete: '确定删除该账号记录？',
+    toastDeleted: '🗑️ 已删除',
+    toastActivated: '✅ 账号已开通！',
+    toastDeactivated: '⏸️ 账号已停用',
+    noName: '未填写姓名',
+  },
+  TW: {
+    title: '账号管理 - LINN 面部歪斜評估系统',
+    lang: 'zh-TW',
+    loading: '載入中...',
+    noRecords: '暫無賬號記錄',
+    btnDelete: '🗑️ 刪除',
+    btnActivate: '✅ 開通賬號',
+    btnDeactivate: '⏸️ 停用',
+    confirmDelete: '確定刪除該賬號記錄？',
+    toastDeleted: '🗑️ 已刪除',
+    toastActivated: '✅ 賬號已開通！',
+    toastDeactivated: '⏸️ 賬號已停用',
+    noName: '未填寫姓名',
+  }
+};
+
+const _ = I18N[LOCALE];
+
+// Apply locale to document
+document.title = _.title;
+document.documentElement.lang = _.lang;
+</script>
+
+<script>
 const SUPABASE_URL = 'https://uyktwvnllouhvovqpnrd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3R3dm5sbG91aHZvdnFwbnJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDAwNzgsImV4cCI6MjA5MDg3NjA3OH0.V6M9zBZekUHvJ7Xz9kge0_cqBbMbX-2MxUl1rWhxt-0';
 
@@ -157,7 +207,7 @@ function setFilter(f) {
 }
 
 async function loadData() {
-  document.getElementById('listContainer').innerHTML = '<div class="loading">加载中...</div>';
+  document.getElementById('listContainer').innerHTML = `<div class="loading">${_.loading}</div>`;
   try {
     const data = await supabaseFetch('assessors', { order: { field: 'created_at', direction: 'desc' } });
     allRecords = data || [];
@@ -173,14 +223,14 @@ async function loadData() {
 function render() {
   const filtered = currentFilter === 'all' ? allRecords : allRecords.filter(r => r.status === currentFilter);
   const c = document.getElementById('listContainer');
-  if (filtered.length === 0) { c.innerHTML = `<div class="empty"><div class="icon">📋</div>暂无账号记录</div>`; return; }
+  if (filtered.length === 0) { c.innerHTML = `<div class="empty"><div class="icon">📋</div>${_.noRecords}</div>`; return; }
   c.innerHTML = filtered.map(r => {
     const status = r.status || '待激活';
     const isPending = status === '待激活';
     return `
     <div class="assessor-card ${status}">
       <div class="card-header">
-        <div class="card-name">${r.name || '未填写姓名'}</div>
+        <div class="card-name">${r.name || _.noName}</div>
         <span class="badge badge-${status}">${status}</span>
       </div>
       <div class="card-email">📧 ${r.email || '—'}</div>
@@ -190,10 +240,10 @@ function render() {
       </div>
       <div class="card-actions">
         ${isPending
-          ? `<button class="action-btn btn-activate" onclick="activate('${r.id}')">✅ 开通账号</button>
-             <button class="action-btn btn-delete" onclick="removeRecord('${r.id}')">🗑️ 删除</button>`
-          : `<button class="action-btn btn-deactivate" onclick="deactivate('${r.id}')">⏸️ 停用</button>
-             <button class="action-btn btn-delete" onclick="removeRecord('${r.id}')">🗑️ 删除</button>`
+          ? `<button class="action-btn btn-activate" onclick="activate('${r.id}')">${_.btnActivate}</button>
+             <button class="action-btn btn-delete" onclick="removeRecord('${r.id}')">${_.btnDelete}</button>`
+          : `<button class="action-btn btn-deactivate" onclick="deactivate('${r.id}')">${_.btnDeactivate}</button>
+             <button class="action-btn btn-delete" onclick="removeRecord('${r.id}')">${_.btnDelete}</button>`
         }
       </div>
     </div>`;
@@ -203,7 +253,7 @@ function render() {
 async function activate(id) {
   try {
     await supabaseFetch('assessors', { method: 'PATCH', id, body: { status: '已激活' } });
-    toast('✅ 账号已开通！');
+    toast(_.toastActivated);
     loadData();
   } catch (e) { toast('❌ ' + e.message); }
 }
@@ -211,16 +261,16 @@ async function activate(id) {
 async function deactivate(id) {
   try {
     await supabaseFetch('assessors', { method: 'PATCH', id, body: { status: '待激活' } });
-    toast('⏸️ 账号已停用');
+    toast(_.toastDeactivated);
     loadData();
   } catch (e) { toast('❌ ' + e.message); }
 }
 
 async function removeRecord(id) {
-  if (!confirm('确定删除该账号记录？')) return;
+  if (!confirm(_.confirmDelete)) return;
   try {
     await supabaseFetch('assessors', { method: 'DELETE', id });
-    toast('🗑️ 已删除');
+    toast(_.toastDeleted);
     loadData();
   } catch (e) { toast('❌ ' + e.message); }
 }
