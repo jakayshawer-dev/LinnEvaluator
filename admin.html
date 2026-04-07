@@ -169,7 +169,12 @@ async function supabaseFetch(table, options = {}) {
   const { method = 'GET', body, filters, select = '*', order, id } = options;
   let url = `${SUPABASE_URL}/rest/v1/${table}`;
   if (id) {
-    url += `/${id}`;
+    // PATCH/DELETE require filter syntax (?id=eq.) not path params
+    if (method === 'PATCH' || method === 'DELETE') {
+      url += `?id=eq.${encodeURIComponent(id)}`;
+    } else {
+      url += `/${id}`;
+    }
   } else {
     url += `?select=${select}`;
     if (filters) {
