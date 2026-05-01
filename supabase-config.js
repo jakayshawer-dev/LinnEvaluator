@@ -16,7 +16,7 @@ async function supabaseFetch(table, options = {}) {
   let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
   if (filters) {
     Object.entries(filters).forEach(([k, v]) => {
-      url += `&${k]=${encodeURIComponent(v)}`;
+      url += `&${k}]=${encodeURIComponent(v)}`;
     });
   }
   if (order) url += `&order(${order.field})=${order.direction || 'asc'}`;
@@ -25,8 +25,8 @@ async function supabaseFetch(table, options = {}) {
     method,
     headers: {
       'Content-Type': 'application/json',
-      'apikey': SUPABASE_SERVICE_KEY,
-      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Prefer': method === 'POST' ? 'return=representation' : ''
     },
     ...(body ? { body: JSON.stringify(body) } : {})
