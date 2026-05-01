@@ -129,7 +129,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       return;
     }
     const hash = await hashPassword(password);
-    if (assessor.password !== hash) {
+    if (assessor.password_hash !== hash) {
       showError('密码错误');
       return;
     }
