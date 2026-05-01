@@ -240,7 +240,7 @@ async function doSubmit() {
       body: {
         name,
         email,
-        password: hash,
+        password_hash: hash,
         status: '待激活',
         phone,
         created_at: new Date().toISOString()
